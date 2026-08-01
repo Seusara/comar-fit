@@ -4,12 +4,14 @@ import Layout from '../components/Layout';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import ProgressRing from '../components/ProgressRing';
+import FormReferenceModal from '../components/FormReferenceModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useActiveDuel } from '../hooks/useActiveDuel';
 import { generateDailyRoutine, routineHistoryKey, routineProgressKey } from '../routines/generateDailyRoutine';
 import { routineDayKey } from '../routines/routineDay';
 import { parseRoutineHistory, serializeRoutineHistory } from '../routines/routineHistory';
+import { findExerciseReference } from '../routines/catalog';
 
 function readProgress(key) {
   try {
@@ -54,6 +56,7 @@ function Rutina() {
   const validIds = new Set(exercises.map((exercise) => exercise.id));
   const completed = completedIds.filter((id) => validIds.has(id));
   const percentage = exercises.length === 0 ? 0 : (completed.length / exercises.length) * 100;
+  const [openReferenceExerciseId, setOpenReferenceExerciseId] = useState(null);
 
   function toggleExercise(id) {
     setCompletedIds((current) => {
@@ -61,6 +64,10 @@ function Rutina() {
       localStorage.setItem(progressKey, JSON.stringify(next));
       return next;
     });
+  }
+
+  function closeReferenceModal() {
+    setOpenReferenceExerciseId(null);
   }
 
   function registerCompleted() {
@@ -126,6 +133,7 @@ function Rutina() {
             <div className="space-y-3">
               {phase.exercises.map((exercise) => {
                 const checked = completed.includes(exercise.id);
+                const reference = findExerciseReference(exercise.name);
                 return (
                   <Card key={exercise.id} className={checked ? 'border border-primary-fixed-dim/40' : ''}>
                     <label className="flex items-center gap-4 cursor-pointer min-h-[44px]">
@@ -139,9 +147,29 @@ function Rutina() {
                       <span className="flex-1">
                         <span className="block font-bold">{exercise.name}</span>
                         <span className="block text-on-surface-variant text-sm mt-1">{exerciseDetail(exercise)} · Descanso {exercise.restSeconds}s</span>
+                        {reference && (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              setOpenReferenceExerciseId(exercise.id);
+                            }}
+                            className="mt-2 text-primary-fixed-dim underline text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim rounded px-1"
+                          >
+                            Ver técnica
+                          </button>
+                        )}
                       </span>
                       <span className="material-symbols-outlined text-primary-fixed-dim" aria-hidden="true">{checked ? 'check_circle' : 'radio_button_unchecked'}</span>
                     </label>
+                    {reference && openReferenceExerciseId === exercise.id && (
+                      <FormReferenceModal
+                        isOpen
+                        exerciseName={exercise.name}
+                        reference={reference}
+                        onClose={closeReferenceModal}
+                      />
+                    )}
                   </Card>
                 );
               })}

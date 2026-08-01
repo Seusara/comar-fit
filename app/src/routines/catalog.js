@@ -26,34 +26,34 @@ export const ROUTINE_CATALOG = [
 // Map exercise names to their form reference data for technique videos and tips
 const EXERCISE_REFERENCES = {
   'Flexiones': {
-    formReferenceUrl: 'https://www.youtube.com/embed/IODxDxX7oi4',
+    formReferenceUrl: 'https://www.youtube.com/embed/hQmXH-Mv9S8?start=0&end=60',
     formReferenceType: 'youtube',
-    tips: ['Elbows at 45 degrees', 'Keep core tight', 'Full range of motion']
+    tips: ['Codos a 45 grados', 'Core apretado', 'Rango completo de movimiento']
   },
   'Sentadillas': {
-    formReferenceUrl: 'https://www.youtube.com/embed/Soa3qhHJO6s',
+    formReferenceUrl: 'https://www.youtube.com/embed/Soa3qhHJO6s?start=0&end=60',
     formReferenceType: 'youtube',
-    tips: ['Knees aligned with toes', 'Keep chest up', 'Full depth squat']
+    tips: ['Rodillas alineadas con tobillos', 'Pecho arriba', 'Profundidad completa']
   },
   'Burpees': {
-    formReferenceUrl: 'https://www.youtube.com/embed/JZQA7VJpgmI',
+    formReferenceUrl: 'https://www.youtube.com/embed/JZQA7VJpgmI?start=0&end=60',
     formReferenceType: 'youtube',
-    tips: ['Controlled plank position', 'Explosive jump', 'Full body engagement']
+    tips: ['Posición de plancha controlada', 'Salto explosivo', 'Cuerpo completo']
   },
   'Escaladores': {
-    formReferenceUrl: 'https://www.youtube.com/embed/nmwgirgXLYM',
+    formReferenceUrl: 'https://www.youtube.com/embed/nmwgirgXLYM?start=0&end=60',
     formReferenceType: 'youtube',
-    tips: ['Fast controlled movement', 'Hip alignment', 'Core engaged']
+    tips: ['Movimiento rápido controlado', 'Caderas alineadas', 'Core activado']
   },
   'Plancha': {
-    formReferenceUrl: 'https://www.youtube.com/embed/pSHjTRCQxIw',
+    formReferenceUrl: 'https://www.youtube.com/embed/pSHjTRCQxIw?start=0&end=60',
     formReferenceType: 'youtube',
-    tips: ['Neutral spine', 'Shoulders over wrists', 'Engage core']
+    tips: ['Columna neutra', 'Hombros sobre muñecas', 'Core contraído']
   },
   'Puente de glúteo': {
-    formReferenceUrl: 'https://www.youtube.com/embed/wPM8icPu4WM',
+    formReferenceUrl: 'https://www.youtube.com/embed/wPM8icPu4WM?start=0&end=60',
     formReferenceType: 'youtube',
-    tips: ['Glutes at top', 'Full hip extension', 'Squeeze at peak']
+    tips: ['Glúteos en la parte superior', 'Extensión de cadera completa', 'Aprieta al pico']
   },
 };
 
