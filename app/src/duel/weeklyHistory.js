@@ -74,14 +74,19 @@ function streakFor(dayKeys, referenceKey) {
   return streak;
 }
 
-function participant(uid, dayKeys, referenceKey) {
-  const unique = [...new Set(dayKeys)].sort();
+function participant(uid, entries, referenceKey) {
+  const unique = [...new Set(entries.map(({ dayKey }) => dayKey))].sort();
   return {
     uid,
     activeDays: unique.length,
     percentage: Math.round((unique.length / 7) * 100),
     streak: streakFor(unique, referenceKey),
     dayKeys: unique,
+    workoutCount: entries.length,
+    totalMinutes: entries.reduce(
+      (total, { totalMinutes }) => total + Math.max(0, Number(totalMinutes) || 0),
+      0,
+    ),
   };
 }
 
@@ -90,11 +95,11 @@ function resultFor(participantA, participantB) {
   return participantA.activeDays > participantB.activeDays ? 'participantA' : 'participantB';
 }
 
-function createWeek(weekId, uidA, uidB, groupedDays, currentDayKey) {
+function createWeek(weekId, uidA, uidB, groupedWorkouts, currentDayKey) {
   const endKey = shiftKey(weekId, 6);
   const referenceKey = currentDayKey >= weekId && currentDayKey <= endKey ? currentDayKey : endKey;
-  const participantA = participant(uidA, groupedDays.get(weekId)?.get(uidA) ?? [], referenceKey);
-  const participantB = participant(uidB, groupedDays.get(weekId)?.get(uidB) ?? [], referenceKey);
+  const participantA = participant(uidA, groupedWorkouts.get(weekId)?.get(uidA) ?? [], referenceKey);
+  const participantB = participant(uidB, groupedWorkouts.get(weekId)?.get(uidB) ?? [], referenceKey);
   return {
     weekId,
     startKey: weekId,
@@ -110,7 +115,7 @@ export function deriveWeeklyDuelHistory(workouts = [], duel, now = new Date()) {
   const uidB = duel?.userB_uid;
   const currentWeekId = weekStartKey(now);
   const currentDayKey = formatDayKey(now);
-  const groupedDays = new Map();
+  const groupedWorkouts = new Map();
   const validWorkoutDates = [];
 
   for (const workout of Array.isArray(workouts) ? workouts : []) {
@@ -121,10 +126,13 @@ export function deriveWeeklyDuelHistory(workouts = [], duel, now = new Date()) {
     if (!performedAt || !weekId || !workoutDay || weekId > currentWeekId) continue;
 
     validWorkoutDates.push(performedAt);
-    if (!groupedDays.has(weekId)) groupedDays.set(weekId, new Map());
-    const weekParticipants = groupedDays.get(weekId);
+    if (!groupedWorkouts.has(weekId)) groupedWorkouts.set(weekId, new Map());
+    const weekParticipants = groupedWorkouts.get(weekId);
     if (!weekParticipants.has(workout.userId)) weekParticipants.set(workout.userId, []);
-    weekParticipants.get(workout.userId).push(workoutDay);
+    weekParticipants.get(workout.userId).push({
+      dayKey: workoutDay,
+      totalMinutes: workout.totalMinutes,
+    });
   }
 
   const createdAt = toDate(duel?.createdAt);
@@ -134,11 +142,11 @@ export function deriveWeeklyDuelHistory(workouts = [], duel, now = new Date()) {
 
   const weeks = [];
   for (let weekId = firstWeekId; weekId <= currentWeekId; weekId = shiftKey(weekId, 7)) {
-    weeks.push(createWeek(weekId, uidA, uidB, groupedDays, currentDayKey));
+    weeks.push(createWeek(weekId, uidA, uidB, groupedWorkouts, currentDayKey));
   }
 
   const currentWeek = weeks[weeks.length - 1]
-    ?? createWeek(currentWeekId, uidA, uidB, groupedDays, currentDayKey);
+    ?? createWeek(currentWeekId, uidA, uidB, groupedWorkouts, currentDayKey);
   return {
     currentWeek,
     completedWeeks: weeks.slice(0, -1).reverse(),

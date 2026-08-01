@@ -38,10 +38,10 @@ describe('current Mexico City duel day', () => {
 describe('deriveWeeklyDuelHistory', () => {
   it('counts duplicate workouts on one day once and determines the winner', () => {
     const workouts = [
-      { userId: 'aaron', performedAt: new Date('2026-07-27T18:00:00Z') },
-      { userId: 'aaron', performedAt: new Date('2026-07-27T20:00:00Z') },
-      { userId: 'aaron', performedAt: new Date('2026-07-28T18:00:00Z') },
-      { userId: 'alexandra', performedAt: new Date('2026-07-27T19:00:00Z') },
+      { userId: 'aaron', totalMinutes: 10, performedAt: new Date('2026-07-27T18:00:00Z') },
+      { userId: 'aaron', totalMinutes: 20, performedAt: new Date('2026-07-27T20:00:00Z') },
+      { userId: 'aaron', totalMinutes: 30, performedAt: new Date('2026-07-28T18:00:00Z') },
+      { userId: 'alexandra', totalMinutes: 15, performedAt: new Date('2026-07-27T19:00:00Z') },
     ];
 
     const result = deriveWeeklyDuelHistory(workouts, duel, new Date('2026-08-03T18:00:00Z'));
@@ -54,8 +54,18 @@ describe('deriveWeeklyDuelHistory', () => {
     });
     expect(result.completedWeeks[0]).toMatchObject({
       weekId: '2026-07-27',
-      participantA: { activeDays: 2, dayKeys: ['2026-07-27', '2026-07-28'] },
-      participantB: { activeDays: 1, dayKeys: ['2026-07-27'] },
+      participantA: {
+        activeDays: 2,
+        workoutCount: 3,
+        totalMinutes: 60,
+        dayKeys: ['2026-07-27', '2026-07-28'],
+      },
+      participantB: {
+        activeDays: 1,
+        workoutCount: 1,
+        totalMinutes: 15,
+        dayKeys: ['2026-07-27'],
+      },
       result: 'participantA',
     });
   });

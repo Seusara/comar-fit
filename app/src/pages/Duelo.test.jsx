@@ -22,9 +22,12 @@ const DUEL = {
 };
 
 const WORKOUTS = [
-  { workoutId: 'a-1', userId: 'aaron', performedAt: new Date('2026-07-27T18:00:00Z') },
-  { workoutId: 'a-2', userId: 'aaron', performedAt: new Date('2026-07-28T18:00:00Z') },
-  { workoutId: 'b-1', userId: 'alexandra', performedAt: new Date('2026-07-27T19:00:00Z') },
+  { workoutId: 'a-1', userId: 'aaron', totalMinutes: 25, performedAt: new Date('2026-07-27T18:00:00Z') },
+  { workoutId: 'a-2', userId: 'aaron', totalMinutes: 20, performedAt: new Date('2026-07-28T18:00:00Z') },
+  { workoutId: 'b-1', userId: 'alexandra', totalMinutes: 15, performedAt: new Date('2026-07-27T19:00:00Z') },
+  { workoutId: 'a-3', userId: 'aaron', totalMinutes: 20, performedAt: new Date('2026-08-03T18:00:00Z') },
+  { workoutId: 'a-4', userId: 'aaron', totalMinutes: 30, performedAt: new Date('2026-08-04T18:00:00Z') },
+  { workoutId: 'b-2', userId: 'alexandra', totalMinutes: 15, performedAt: new Date('2026-08-03T19:00:00Z') },
 ];
 
 function renderDuelo() {
@@ -34,7 +37,7 @@ function renderDuelo() {
 describe('Duelo', () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
-    vi.setSystemTime(new Date('2026-08-03T18:00:00Z'));
+    vi.setSystemTime(new Date('2026-08-05T18:00:00Z'));
     useActiveDuel.mockReturnValue({ duel: DUEL, loading: false, error: null });
     useDuelWorkouts.mockReturnValue({ workouts: WORKOUTS, loading: false, error: null });
   });
@@ -52,6 +55,14 @@ describe('Duelo', () => {
     expect(screen.getAllByText('Alexandra').length).toBeGreaterThan(0);
     expect(screen.getByRole('img', { name: 'Foto de Aaron' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Foto de Alexandra' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /aaron va arriba por 1 día/i })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Aaron, martes: activo' })).toBeInTheDocument();
+    expect(screen.getByTestId('metric-workouts')).toHaveTextContent('2');
+    expect(screen.getByTestId('metric-workouts')).toHaveTextContent('1');
+    expect(screen.getByTestId('metric-minutes')).toHaveTextContent('50');
+    expect(screen.getByTestId('metric-minutes')).toHaveTextContent('15');
+    expect(screen.getByTestId('season-score')).toHaveTextContent('1 - 0');
+    expect(screen.getByText(/1 semana empatada/i)).toBeInTheDocument();
     expect(screen.getByText(/ganó Aaron/i)).toBeInTheDocument();
     expect(screen.getByText(/^empate$/i)).toBeInTheDocument();
     expect(screen.getAllByTestId('week-row').map((row) => row.dataset.weekId))

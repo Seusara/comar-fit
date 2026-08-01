@@ -1,7 +1,7 @@
 import Layout from '../components/Layout';
 import Card from '../components/Card';
-import ProgressRing from '../components/ProgressRing';
-import VSDisplay from '../components/VSDisplay';
+import Avatar from '../components/Avatar';
+import DuelWeekTrack from '../components/DuelWeekTrack';
 import { useActiveDuel } from '../hooks/useActiveDuel';
 import { useDuelWorkouts } from '../hooks/useDuelWorkouts';
 import { deriveWeeklyDuelHistory } from '../duel/weeklyHistory';
@@ -10,9 +10,51 @@ function participantName(duel, uid, fallback) {
   return duel?.participantNames?.[uid] || fallback;
 }
 
+function compactDate(dayKey) {
+  const date = new Date(`${dayKey}T12:00:00Z`);
+  return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' })
+    .format(date)
+    .replace('.', '');
+}
+
+function weekRange(week) {
+  return `${compactDate(week.startKey)} – ${compactDate(week.endKey)}`;
+}
+
 export function resultLabel(week, nameA, nameB) {
   if (week.result === 'tied') return 'Empate';
   return `Ganó ${week.result === 'participantA' ? nameA : nameB}`;
+}
+
+function leadMessage(week, nameA, nameB) {
+  const difference = week.participantA.activeDays - week.participantB.activeDays;
+  if (difference === 0) {
+    return difference === 0 && week.participantA.activeDays === 0
+      ? 'La semana está abierta.'
+      : 'Empate perfecto. Van día por día.';
+  }
+  const leader = difference > 0 ? nameA : nameB;
+  const days = Math.abs(difference);
+  return `${leader} va arriba por ${days} ${days === 1 ? 'día' : 'días'}.`;
+}
+
+function seasonTotals(weeks) {
+  return weeks.reduce((totals, week) => {
+    if (week.result === 'participantA') totals.winsA += 1;
+    if (week.result === 'participantB') totals.winsB += 1;
+    if (week.result === 'tied') totals.ties += 1;
+    return totals;
+  }, { winsA: 0, winsB: 0, ties: 0 });
+}
+
+function MetricRow({ label, valueA, valueB, testId }) {
+  return (
+    <div data-testid={testId} className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-outline-variant/10 py-3 last:border-0">
+      <strong className="font-stats-num text-xl text-primary-fixed-dim">{valueA}</strong>
+      <span className="text-center text-xs font-semibold uppercase tracking-wider text-on-surface-variant">{label}</span>
+      <strong className="text-right font-stats-num text-xl text-secondary-fixed-dim">{valueB}</strong>
+    </div>
+  );
 }
 
 function Duelo() {
@@ -27,7 +69,7 @@ function Duelo() {
   if (duelLoading || workoutsLoading) {
     return (
       <Layout active="duelo">
-        <p role="status" className="text-on-surface-variant text-center p-8">Cargando duelo...</p>
+        <p role="status" className="p-8 text-center text-on-surface-variant">Cargando duelo...</p>
       </Layout>
     );
   }
@@ -35,7 +77,7 @@ function Duelo() {
   if (duelError || workoutsError || !duel) {
     return (
       <Layout active="duelo">
-        <p role="alert" className="text-error text-center p-8">No pudimos cargar el duelo.</p>
+        <p role="alert" className="p-8 text-center text-error">No pudimos cargar el duelo.</p>
       </Layout>
     );
   }
@@ -44,92 +86,93 @@ function Duelo() {
   const uidB = duel.userB_uid;
   const nameA = participantName(duel, uidA, 'Jugador 1');
   const nameB = participantName(duel, uidB, 'Jugador 2');
+  const profileA = duel.participantProfiles?.[uidA];
+  const profileB = duel.participantProfiles?.[uidB];
   const { currentWeek, completedWeeks } = deriveWeeklyDuelHistory(workouts, duel, new Date());
+  const season = seasonTotals(completedWeeks);
 
   return (
     <Layout active="duelo">
-      <div className="space-y-8">
-        <header>
-          <p className="font-label-md text-primary-fixed-dim uppercase tracking-widest text-xs">
-            Siempre juntos
-          </p>
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile">Duelo semanal</h1>
-          <p className="text-on-surface-variant text-sm mt-2">
-            Una semana nueva empieza cada lunes. El historial anterior se conserva.
-          </p>
+      <div className="space-y-7 pb-4">
+        <header className="flex items-end justify-between gap-4">
+          <div>
+            <p className="font-label-md text-xs uppercase tracking-[0.2em] text-primary-fixed-dim">Siempre juntos</p>
+            <h1 className="font-headline-lg-mobile text-headline-lg-mobile">Duelo semanal</h1>
+          </div>
+          <span className="pb-1 text-xs text-on-surface-variant">{weekRange(currentWeek)}</span>
         </header>
 
-        <Card className="space-y-6">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="font-label-md uppercase tracking-widest text-xs">Semana actual</h2>
-            <span className="text-on-surface-variant text-xs">
-              {currentWeek.startKey} – {currentWeek.endKey}
-            </span>
+        <Card className="relative overflow-hidden border border-outline-variant/10 p-5 sm:p-7">
+          <div aria-hidden="true" className="absolute inset-y-0 left-0 w-1/2 bg-[radial-gradient(circle_at_30%_20%,rgba(0,219,233,0.10),transparent_65%)]" />
+          <div aria-hidden="true" className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_70%_20%,rgba(173,0,254,0.10),transparent_65%)]" />
+
+          <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+            <div className="flex min-w-0 flex-col items-center text-center">
+              <Avatar name={nameA} src={profileA?.avatarUrl} size="h-20 w-20 sm:h-24 sm:w-24" className="shadow-[0_0_24px_rgba(0,219,233,0.16)]" />
+              <p className="mt-3 max-w-full truncate font-bold">{nameA}</p>
+              <p className="font-stats-num text-2xl text-primary-fixed-dim">{currentWeek.participantA.activeDays}</p>
+              <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">días activos</span>
+            </div>
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant/20 bg-surface-container-high font-stats-num text-xs italic text-primary-fixed-dim">VS</div>
+
+            <div className="flex min-w-0 flex-col items-center text-center">
+              <Avatar name={nameB} src={profileB?.avatarUrl} size="h-20 w-20 sm:h-24 sm:w-24" className="shadow-[0_0_24px_rgba(173,0,254,0.16)]" />
+              <p className="mt-3 max-w-full truncate font-bold">{nameB}</p>
+              <p className="font-stats-num text-2xl text-secondary-fixed-dim">{currentWeek.participantB.activeDays}</p>
+              <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">días activos</span>
+            </div>
           </div>
-          <VSDisplay
-            participantA={{ name: nameA, avatarUrl: duel.participantProfiles?.[uidA]?.avatarUrl, status: `${currentWeek.participantA.activeDays}/7 días` }}
-            participantB={{ name: nameB, avatarUrl: duel.participantProfiles?.[uidB]?.avatarUrl, status: `${currentWeek.participantB.activeDays}/7 días` }}
-          />
-          <div className="flex justify-around items-center gap-4">
-            <ProgressRing
-              percentage={currentWeek.participantA.percentage}
-              label={`Días activos de ${nameA} esta semana`}
-            />
-            <ProgressRing
-              percentage={currentWeek.participantB.percentage}
-              label={`Días activos de ${nameB} esta semana`}
+
+          <div className="relative mt-7 border-t border-outline-variant/10 pt-6">
+            <h2 className="mb-5 text-center font-headline-lg-mobile text-xl">{leadMessage(currentWeek, nameA, nameB)}</h2>
+            <DuelWeekTrack
+              participantA={currentWeek.participantA}
+              participantB={currentWeek.participantB}
+              nameA={nameA}
+              nameB={nameB}
+              weekStartKey={currentWeek.startKey}
             />
           </div>
         </Card>
 
+        <Card className="px-5 py-2">
+          <MetricRow label="Días activos" valueA={currentWeek.participantA.activeDays} valueB={currentWeek.participantB.activeDays} />
+          <MetricRow testId="metric-workouts" label="Entrenamientos" valueA={currentWeek.participantA.workoutCount} valueB={currentWeek.participantB.workoutCount} />
+          <MetricRow testId="metric-minutes" label="Minutos" valueA={currentWeek.participantA.totalMinutes} valueB={currentWeek.participantB.totalMinutes} />
+          <MetricRow label="Racha actual" valueA={`${currentWeek.participantA.streak} d`} valueB={`${currentWeek.participantB.streak} d`} />
+        </Card>
+
+        <Card data-testid="season-score" className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-on-surface-variant">Marcador de temporada</p>
+          <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+            <p className="truncate text-sm font-bold text-primary-fixed-dim">{nameA}</p>
+            <p className="font-stats-num text-3xl">{season.winsA} - {season.winsB}</p>
+            <p className="truncate text-sm font-bold text-secondary-fixed-dim">{nameB}</p>
+          </div>
+          <p className="mt-2 text-xs text-on-surface-variant">{season.ties} {season.ties === 1 ? 'semana empatada' : 'semanas empatadas'}</p>
+        </Card>
+
         <section aria-labelledby="duel-history-heading" className="space-y-4">
           <div>
-            <h2 id="duel-history-heading" className="font-headline-lg-mobile text-xl">
-              Historial de semanas
-            </h2>
-            <p className="text-on-surface-variant text-sm">Resultados más recientes primero.</p>
+            <h2 id="duel-history-heading" className="font-headline-lg-mobile text-xl">Historial de semanas</h2>
+            <p className="text-sm text-on-surface-variant">Resultados más recientes primero.</p>
           </div>
 
           {completedWeeks.length === 0 ? (
-            <Card>
-              <p className="text-on-surface-variant text-sm">Aún no hay semanas finalizadas.</p>
-            </Card>
+            <Card><p className="text-sm text-on-surface-variant">Aún no hay semanas finalizadas.</p></Card>
           ) : (
-            <ol className="space-y-4">
+            <ol className="space-y-3">
               {completedWeeks.map((week) => (
                 <li key={week.weekId}>
-                  <Card
-                    data-testid="week-row"
-                    data-week-id={week.weekId}
-                    aria-label={`Semana del ${week.startKey} al ${week.endKey}`}
-                    className="space-y-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-on-surface-variant text-xs">
-                        {week.startKey} – {week.endKey}
-                      </p>
-                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${
-                        week.result === 'tied'
-                          ? 'bg-surface-container-highest text-on-surface'
-                          : 'bg-primary/15 text-primary-fixed-dim'
-                      }`}>
-                        {resultLabel(week, nameA, nameB)}
-                      </span>
+                  <Card data-testid="week-row" data-week-id={week.weekId} aria-label={`Semana del ${week.startKey} al ${week.endKey}`} className="flex items-center justify-between gap-4 py-4">
+                    <div>
+                      <p className="text-xs text-on-surface-variant">{weekRange(week)}</p>
+                      <p className="mt-1 text-sm font-bold">{nameA} {week.participantA.activeDays} · {week.participantB.activeDays} {nameB}</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-xl bg-surface-container-low p-3">
-                        <p className="font-bold text-sm">{nameA}</p>
-                        <p className="font-stats-num text-primary-fixed-dim text-xl">
-                          {week.participantA.activeDays}/7
-                        </p>
-                      </div>
-                      <div className="rounded-xl bg-surface-container-low p-3 text-right">
-                        <p className="font-bold text-sm">{nameB}</p>
-                        <p className="font-stats-num text-primary-fixed-dim text-xl">
-                          {week.participantB.activeDays}/7
-                        </p>
-                      </div>
-                    </div>
+                    <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${week.result === 'tied' ? 'bg-surface-container-highest text-on-surface' : 'bg-primary/15 text-primary-fixed-dim'}`}>
+                      {resultLabel(week, nameA, nameB)}
+                    </span>
                   </Card>
                 </li>
               ))}
