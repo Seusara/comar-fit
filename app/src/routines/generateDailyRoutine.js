@@ -28,12 +28,18 @@ function seededOrder(items, seed) {
   return [...items].sort((left, right) => hash(`${seed}:${left.id}`) - hash(`${seed}:${right.id}`));
 }
 
-function scaleExercise(exercise, level) {
+function scaleExercise(exercise, level, progressionAdjustments = {}) {
   const multiplier = [0.8, 1, 1.25][level] ?? 0.8;
+  const adjustment = progressionAdjustments[exercise.name];
+  // Only reps scale with the adaptive adjustment (sets stay level-based) —
+  // matches the design spec's example ("Flexiones: 15 → 18 reps"), and
+  // keeps the effect gentle rather than compounding across both fields.
+  const progressionMultiplier = adjustment?.multiplier ?? 1;
   return {
     ...exercise,
     sets: Math.max(1, Math.round(exercise.sets * multiplier)),
-    reps: Math.max(1, Math.round(exercise.reps * multiplier)),
+    reps: Math.max(1, Math.round(exercise.reps * multiplier * progressionMultiplier)),
+    progression: adjustment ? { reason: adjustment.reason } : null,
   };
 }
 
@@ -57,7 +63,7 @@ export function routineHistoryKey(uid) {
   return `comar-fit:routine-history:${uid}`;
 }
 
-export function generateDailyRoutine({ profile = {}, uid = 'guest', dayKey, recentExerciseIds = [] }) {
+export function generateDailyRoutine({ profile = {}, uid = 'guest', dayKey, recentExerciseIds = [], progressionAdjustments = {} }) {
   const equipment = Array.isArray(profile.equipment) ? profile.equipment : [];
   const normalizedEquipment = new Set(equipment.map(normalize));
   const hasCoreProfile = Boolean(profile.experienceLevel && profile.objective && profile.preferredWorkoutMinutes);
@@ -80,7 +86,7 @@ export function generateDailyRoutine({ profile = {}, uid = 'guest', dayKey, rece
     const otherMatches = phaseItems.filter((exercise) => !exercise.goals.includes(goal));
     const candidates = [...seededOrder(goalMatches, `${seed}:${phase}:goal`), ...seededOrder(otherMatches, `${seed}:${phase}:other`)];
     const ordered = [...candidates.filter((exercise) => !recent.has(exercise.id)), ...candidates.filter((exercise) => recent.has(exercise.id))];
-    return selectWithinMinutes(ordered, target, minimum).map((exercise) => scaleExercise(exercise, level));
+    return selectWithinMinutes(ordered, target, minimum).map((exercise) => scaleExercise(exercise, level, progressionAdjustments));
   };
 
   const short = preferredMinutes <= 18;

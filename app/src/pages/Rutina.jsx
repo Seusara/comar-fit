@@ -9,10 +9,12 @@ import RestTimer from '../components/RestTimer';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useActiveDuel } from '../hooks/useActiveDuel';
+import { useWorkouts } from '../hooks/useWorkouts';
 import { generateDailyRoutine, routineHistoryKey, routineProgressKey } from '../routines/generateDailyRoutine';
 import { routineDayKey } from '../routines/routineDay';
 import { parseRoutineHistory, serializeRoutineHistory } from '../routines/routineHistory';
 import { findExerciseReference } from '../routines/catalog';
+import { computeProgressionAdjustments } from '../routines/progressionEngine';
 
 function readProgress(key) {
   try {
@@ -33,15 +35,22 @@ function Rutina() {
   const { currentUser } = useAuth();
   const { profile, loading: profileLoading, error: profileError } = useUserProfile();
   const { duel } = useActiveDuel();
+  const { workouts: recentWorkouts = [] } = useWorkouts(duel?.duelId, currentUser?.uid) ?? {};
   const dayKey = routineDayKey(new Date(), duel?.timezone);
   const progressKey = routineProgressKey(currentUser?.uid ?? 'guest', dayKey);
   const historyKey = routineHistoryKey(currentUser?.uid ?? 'guest');
   const recentExerciseIds = parseRoutineHistory(localStorage.getItem(historyKey), dayKey);
+  // Phase 3.3: adjust reps for exercises the user has rated mostly "easy" or
+  // "hard" over the trailing week — see progressionEngine.js.
+  const progressionAdjustments = useMemo(
+    () => computeProgressionAdjustments(recentWorkouts),
+    [recentWorkouts],
+  );
   const routine = useMemo(() => generateDailyRoutine({
-    profile: profile ?? {}, uid: currentUser?.uid ?? 'guest', dayKey, recentExerciseIds,
+    profile: profile ?? {}, uid: currentUser?.uid ?? 'guest', dayKey, recentExerciseIds, progressionAdjustments,
   // recentExerciseIds is a storage snapshot; profile/day changes are the regeneration boundaries.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [currentUser?.uid, dayKey, profile]);
+  }), [currentUser?.uid, dayKey, profile, progressionAdjustments]);
   const [completedIds, setCompletedIds] = useState(() => readProgress(progressKey));
 
   useEffect(() => {
@@ -167,6 +176,16 @@ function Rutina() {
                       <span className="flex-1">
                         <span className="block font-bold">{exercise.name}</span>
                         <span className="block text-on-surface-variant text-sm mt-1">{exerciseDetail(exercise)} · Descanso {exercise.restSeconds}s</span>
+                        {exercise.progression?.reason === 'easy' && (
+                          <span className="block text-primary-fixed-dim text-xs mt-1">
+                            💪 Reps aumentadas — te resultó fácil esta semana
+                          </span>
+                        )}
+                        {exercise.progression?.reason === 'hard' && (
+                          <span className="block text-tertiary-fixed-dim text-xs mt-1">
+                            🧘 Reps reducidas — te resultó difícil esta semana
+                          </span>
+                        )}
                         {reference && (
                           <button
                             type="button"
