@@ -167,8 +167,10 @@ function Perfil() {
       setPhotoFile(null);
       setMessage('Foto de perfil actualizada');
       refresh();
-    } catch {
-      setSaveError('No pudimos actualizar la foto. Intenta nuevamente.');
+    } catch (error) {
+      setSaveError(error?.message === 'PROFILE_PHOTO_UPLOAD_TIMEOUT'
+        ? 'Firebase Storage aún no está habilitado. Actívalo en Firebase para subir fotos.'
+        : 'No pudimos actualizar la foto. Intenta nuevamente.');
     } finally { setPhotoSaving(false); }
   }
 

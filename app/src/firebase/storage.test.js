@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { ref, uploadBytesResumable, getDownloadURL } = vi.hoisted(() => ({
   ref: vi.fn(),
@@ -13,6 +13,7 @@ import { uploadProfilePhoto } from './storage';
 
 describe('uploadProfilePhoto', () => {
   beforeEach(() => vi.clearAllMocks());
+  afterEach(() => vi.useRealTimers());
 
   it('uploads the owner WebP, forwards progress and returns its URL', async () => {
     const snapshot = { ref: { fullPath: 'profilePhotos/aaron/avatar.webp' } };
@@ -32,5 +33,19 @@ describe('uploadProfilePhoto', () => {
     expect(ref).toHaveBeenCalledWith({ name: 'storage' }, 'profilePhotos/aaron/avatar.webp');
     expect(uploadBytesResumable).toHaveBeenCalledWith(snapshot.ref, blob, { contentType: 'image/webp' });
     expect(onProgress).toHaveBeenCalledWith(25);
+  });
+
+  it('cancels and reports when Storage never starts the upload', async () => {
+    vi.useFakeTimers();
+    const cancel = vi.fn();
+    ref.mockReturnValue({ fullPath: 'profilePhotos/aaron/avatar.webp' });
+    uploadBytesResumable.mockReturnValue({ on: vi.fn(), cancel, snapshot: {} });
+
+    const pending = uploadProfilePhoto('aaron', new Blob(['webp'], { type: 'image/webp' }));
+    const rejection = expect(pending).rejects.toThrow('PROFILE_PHOTO_UPLOAD_TIMEOUT');
+    await vi.advanceTimersByTimeAsync(15000);
+
+    await rejection;
+    expect(cancel).toHaveBeenCalledOnce();
   });
 });

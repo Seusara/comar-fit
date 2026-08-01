@@ -6,14 +6,26 @@ export function uploadProfilePhoto(uid, blob, onProgress) {
   const upload = uploadBytesResumable(photoRef, blob, { contentType: 'image/webp' });
 
   return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      callback(value);
+    };
+    const timeoutId = setTimeout(() => {
+      upload.cancel();
+      finish(reject, new Error('PROFILE_PHOTO_UPLOAD_TIMEOUT'));
+    }, 15000);
+
     upload.on('state_changed', (snapshot) => {
       const percent = snapshot.totalBytes ? Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100) : 0;
       onProgress?.(percent);
-    }, reject, async () => {
+    }, (error) => finish(reject, error), async () => {
       try {
-        resolve(await getDownloadURL(upload.snapshot.ref));
+        finish(resolve, await getDownloadURL(upload.snapshot.ref));
       } catch (error) {
-        reject(error);
+        finish(reject, error);
       }
     });
   });
