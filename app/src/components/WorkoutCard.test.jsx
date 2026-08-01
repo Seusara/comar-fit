@@ -19,19 +19,20 @@ describe('WorkoutCard', () => {
     expect(screen.getByText(/10 min/)).toBeInTheDocument();
   });
 
-  it('shows "Calculando puntos…" while pending', () => {
+  it('shows pending legacy documents as completed', () => {
     render(<WorkoutCard workout={{ ...baseWorkout, status: 'pending' }} />);
-    expect(screen.getByText(/calculando puntos/i)).toBeInTheDocument();
+    expect(screen.getByText('Entrenamiento completado')).toBeInTheDocument();
   });
 
-  it('shows the score once scored', () => {
+  it('ignores legacy session scores', () => {
     render(<WorkoutCard workout={{ ...baseWorkout, status: 'scored', sessionScore: 72 }} />);
-    expect(screen.getByText(/72 pts/)).toBeInTheDocument();
+    expect(screen.getByText('Entrenamiento completado')).toBeInTheDocument();
+    expect(screen.queryByText(/72 pts/)).not.toBeInTheDocument();
   });
 
-  it('shows an error message when scoring failed', () => {
+  it('ignores legacy scoring errors', () => {
     render(<WorkoutCard workout={{ ...baseWorkout, status: 'error' }} />);
-    expect(screen.getByText(/no pudimos calcular los puntos/i)).toBeInTheDocument();
+    expect(screen.getByText('Entrenamiento completado')).toBeInTheDocument();
   });
 
   it('shows edit/delete actions when within the edit window', () => {

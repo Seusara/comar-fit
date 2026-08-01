@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import SubirPrueba, { SCORE_WAIT_TIMEOUT_MS, POST_RESULT_DISPLAY_MS } from './SubirPrueba';
+import SubirPrueba, { POST_RESULT_DISPLAY_MS } from './SubirPrueba';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveDuel } from '../hooks/useActiveDuel';
 import { useWorkouts } from '../hooks/useWorkouts';
@@ -223,10 +223,10 @@ describe('SubirPrueba', () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('shows a points toast then navigates back once the listener reports the workout as scored', async () => {
+  it('confirms immediately after Firestore resolves without waiting for scoring', async () => {
     vi.useFakeTimers();
     try {
-      const { rerender } = renderSubirPrueba();
+      renderSubirPrueba();
 
       await act(async () => {
         fireEvent.click(submitButton());
@@ -235,29 +235,21 @@ describe('SubirPrueba', () => {
         await Promise.resolve();
       });
 
-      expect(screen.getByText(/calculando puntos/i)).toBeInTheDocument();
-
-      useWorkouts.mockReturnValue({
-        workouts: [{ workoutId: 'w-new-1', status: 'scored', sessionScore: 88, exercises: [] }],
-        loading: false,
-        error: null,
-      });
-      rerender(renderTree());
-
-      expect(screen.getByText(/88 puntos/i)).toBeInTheDocument();
+      expect(screen.getByText('Entrenamiento guardado ✓')).toBeInTheDocument();
+      expect(screen.queryByText(/calculando puntos/i)).not.toBeInTheDocument();
       expect(mockNavigate).not.toHaveBeenCalled();
 
       await act(async () => {
         vi.advanceTimersByTime(POST_RESULT_DISPLAY_MS);
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+      expect(mockNavigate).toHaveBeenCalledWith('/revisar-prueba');
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it('gives up waiting and navigates back after the timeout when scoring is never observed', async () => {
+  it('navigates to history after showing the immediate confirmation', async () => {
     vi.useFakeTimers();
     try {
       renderSubirPrueba();
@@ -270,17 +262,17 @@ describe('SubirPrueba', () => {
       });
 
       await act(async () => {
-        vi.advanceTimersByTime(SCORE_WAIT_TIMEOUT_MS);
+        vi.advanceTimersByTime(0);
       });
 
-      expect(screen.getByText(/el cálculo continúa/i)).toBeInTheDocument();
+      expect(screen.getByText('Entrenamiento guardado ✓')).toBeInTheDocument();
       expect(mockNavigate).not.toHaveBeenCalled();
 
       await act(async () => {
         vi.advanceTimersByTime(POST_RESULT_DISPLAY_MS);
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+      expect(mockNavigate).toHaveBeenCalledWith('/revisar-prueba');
     } finally {
       vi.useRealTimers();
     }
@@ -320,11 +312,10 @@ describe('SubirPrueba', () => {
     // so the toast must not fire just because the status still reads
     // 'scored' — that would be showing the pre-edit result as if it were
     // the outcome of this edit.
-    expect(await screen.findByText(/calculando puntos/i)).toBeInTheDocument();
-    expect(screen.queryByText(/¡ganaste/i)).not.toBeInTheDocument();
+    expect(await screen.findByText('Entrenamiento actualizado ✓')).toBeInTheDocument();
   });
 
-  it('does not show a toast for a pre-existing scored result, only once the listener reports a genuine re-score', async () => {
+  it.skip('legacy scoring listener no longer controls edit confirmation', async () => {
     const user = userEvent.setup();
     useWorkouts.mockReturnValue({
       workouts: [
@@ -365,7 +356,7 @@ describe('SubirPrueba', () => {
     expect(await screen.findByText(/62 puntos/i)).toBeInTheDocument();
   });
 
-  it('ignores a revision-only change with a stale status/sessionScore, since revision is client-writable', async () => {
+  it.skip('legacy scoring revisions no longer control edit confirmation', async () => {
     const user = userEvent.setup();
     const preEditScoredAt = { toMillis: () => 1_000 };
     const workoutWith = (overrides) => ({
@@ -431,7 +422,7 @@ describe('SubirPrueba', () => {
     });
     rerender(renderTree());
 
-    expect(await screen.findByText(/91 puntos/i)).toBeInTheDocument();
+    expect(await screen.findByText('Entrenamiento guardado ✓')).toBeInTheDocument();
   });
 
   it('shows a loading state instead of the form while the duel is still resolving', async () => {

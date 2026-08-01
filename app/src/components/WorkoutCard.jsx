@@ -40,32 +40,13 @@ function formatExerciseLine(exercise) {
   return parts.join(' · ');
 }
 
-const STATUS_META = {
-  pending: { icon: 'hourglass_top', className: 'text-on-surface-variant' },
-  scored: { icon: 'check_circle', className: 'text-primary-fixed-dim' },
-  error: { icon: 'error', className: 'text-error' },
-};
-
-function StatusIndicator({ status, sessionScore }) {
-  const meta = STATUS_META[status] || STATUS_META.pending;
-  let label;
-  if (status === 'scored') {
-    label = typeof sessionScore === 'number' ? `${sessionScore} pts` : 'Puntos calculados';
-  } else if (status === 'error') {
-    label = 'No pudimos calcular los puntos';
-  } else {
-    label = 'Calculando puntos…';
-  }
-
+function StatusIndicator() {
   return (
-    <span
-      className={`flex items-center gap-1 text-xs font-label-md shrink-0 ${meta.className}`}
-      role={status === 'error' ? 'alert' : 'status'}
-    >
+    <span className="flex items-center gap-1 text-xs font-label-md shrink-0 text-primary-fixed-dim" role="status">
       <span className="material-symbols-outlined text-base" aria-hidden="true">
-        {meta.icon}
+        check_circle
       </span>
-      {label}
+      Entrenamiento completado
     </span>
   );
 }
@@ -82,7 +63,9 @@ function WorkoutCard({ workout, editableUntil, onEdit, onDelete }) {
   if (!workout) return null;
 
   const performedAt = toDate(workout.performedAt);
-  const editableUntilDate = toDate(editableUntil ?? workout.editableUntil);
+  const createdAt = toDate(workout.createdAt);
+  const editableUntilDate = toDate(editableUntil ?? workout.editableUntil)
+    ?? (createdAt ? new Date(createdAt.getTime() + 10 * 60 * 1000) : null);
   const isEditable = editableUntilDate ? Date.now() < editableUntilDate.getTime() : false;
   const exercises = Array.isArray(workout.exercises) ? workout.exercises : [];
 
@@ -95,7 +78,7 @@ function WorkoutCard({ workout, editableUntil, onEdit, onDelete }) {
     <Card className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <p className="font-label-md text-on-surface text-sm">{formatDateTime(performedAt)}</p>
-        <StatusIndicator status={workout.status || 'pending'} sessionScore={workout.sessionScore} />
+        <StatusIndicator />
       </div>
 
       {exercises.length === 0 ? (

@@ -20,8 +20,6 @@ import { routineExercisesFromLocationState } from '../routines/routinePayload';
 // resolve well inside this window; the timeout only exists so a slow or
 // stuck calculation never traps the user on this screen — see design
 // spec's "Errores y estados" and task-7-brief's explicit timeout note.
-export const SCORE_WAIT_TIMEOUT_MS = 6000;
-
 // How long the points toast (or the "still calculating" message) stays on
 // screen before Subir Prueba automatically returns to the Dashboard.
 export const POST_RESULT_DISPLAY_MS = 1500;
@@ -43,18 +41,6 @@ export const POST_RESULT_DISPLAY_MS = 1500;
  *    that cached snapshot pass the baseline comparison below and flash a
  *    stale score as if it were this edit's result.
  */
-function resultToken(workout) {
-  if (!workout) return null;
-  if (workout.scoredAt != null) {
-    const raw = workout.scoredAt;
-    const millis = typeof raw?.toMillis === 'function' ? raw.toMillis() : raw;
-    return `scoredAt:${millis}`;
-  }
-  if (typeof workout.sessionScore === 'number') return `score:${workout.sessionScore}`;
-  if (workout.revision != null) return `rev:${workout.revision}`;
-  return null;
-}
-
 /**
  * Handles both "Subir entrenamiento" (create) and "Editar entrenamiento"
  * (via /workouts/:workoutId/edit) in one component: the only difference is
@@ -82,7 +68,6 @@ function SubirPrueba() {
   const submittingRef = useRef(false);
   // Snapshot of the edited workout's "already scored" state, captured right
   // when handleSubmit fires — see the scored-watcher effect below for why.
-  const baselineRef = useRef({ wasScored: false, token: null });
 
   const [exercises, setExercises] = useState(() => {
     if (isEditMode) return [];
@@ -92,10 +77,8 @@ function SubirPrueba() {
   const [isValid, setIsValid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [phase, setPhase] = useState('form'); // 'form' | 'waiting'
-  const [pendingWorkoutId, setPendingWorkoutId] = useState(null);
-  const [scoreToast, setScoreToast] = useState(null);
-  const [timedOut, setTimedOut] = useState(false);
+  const [phase, setPhase] = useState('form'); // 'form' | 'success'
+  const [successMessage, setSuccessMessage] = useState('');
   const [profile, setProfile] = useState(null);
 
   // Combines every hook this page depends on, the same way Dashboard.jsx
@@ -155,58 +138,11 @@ function SubirPrueba() {
     }
   }, [isEditMode, existingWorkout, hasPrefilled]);
 
-  // Stop waiting for the scoring listener after SCORE_WAIT_TIMEOUT_MS.
   useEffect(() => {
-    if (phase !== 'waiting') return undefined;
-    const timer = setTimeout(() => setTimedOut(true), SCORE_WAIT_TIMEOUT_MS);
+    if (phase !== 'success') return undefined;
+    const timer = setTimeout(() => navigate('/revisar-prueba'), POST_RESULT_DISPLAY_MS);
     return () => clearTimeout(timer);
-  }, [phase]);
-
-  // Watches the same listener the Dashboard/Revisar Prueba use. Never
-  // invents a score locally — only reacts once the listener itself reports
-  // status 'scored' (or 'error') for the workout just saved.
-  //
-  // Edit mode nuance: the workout being edited is very likely ALREADY
-  // `status: 'scored'` from before this edit (that's the normal state for
-  // something you're revising). Without a baseline, this effect would fire
-  // on the very first render after save and show the PRE-EDIT score as if
-  // it were the outcome of this edit — inventing a stale result, which
-  // violates "never invent the result locally" in spirit even though the
-  // status text is technically accurate. `baselineRef` (captured in
-  // handleSubmit, before the write) records whether the workout was already
-  // scored and what its result looked like, so this effect only reacts once
-  // the listener reports a result that's actually different from that
-  // baseline — a genuine transition, not just a pre-existing value.
-  useEffect(() => {
-    if (phase !== 'waiting' || !pendingWorkoutId) return;
-    const match = workouts.find((w) => w.workoutId === pendingWorkoutId);
-    if (!match) return;
-    if (match.status === 'scored') {
-      const isStaleBaseline =
-        baselineRef.current.wasScored && resultToken(match) === baselineRef.current.token;
-      if (isStaleBaseline) return; // still the pre-edit result; keep waiting for the real re-score
-      setScoreToast({
-        variant: 'success',
-        message:
-          typeof match.sessionScore === 'number'
-            ? `¡Ganaste ${match.sessionScore} puntos!`
-            : 'Tu entrenamiento fue calificado.',
-      });
-    } else if (match.status === 'error') {
-      setScoreToast({ variant: 'error', message: 'No pudimos calcular los puntos.' });
-    }
-  }, [workouts, phase, pendingWorkoutId]);
-
-  // Once we have something to show the user (a result, or we've given up
-  // waiting) automatically return to the Dashboard. This never fires before
-  // create/updateWorkout has resolved, since `phase` only becomes 'waiting'
-  // after that succeeds.
-  useEffect(() => {
-    if (phase !== 'waiting') return undefined;
-    if (!scoreToast && !timedOut) return undefined;
-    const timer = setTimeout(() => navigate('/dashboard'), POST_RESULT_DISPLAY_MS);
-    return () => clearTimeout(timer);
-  }, [phase, scoreToast, timedOut, navigate]);
+  }, [phase, navigate]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -220,24 +156,15 @@ function SubirPrueba() {
     setSubmitting(true);
     setSubmitError('');
 
-    // Baseline for the scored-watcher effect: what did this workout look
-    // like right before we wrote to it? See that effect's comment.
-    const before = isEditMode ? workouts.find((w) => w.workoutId === workoutId) : null;
-    baselineRef.current = { wasScored: before?.status === 'scored', token: resultToken(before) };
-
     try {
       if (isEditMode) {
         await updateWorkout(duelId, workoutId, exercises);
-        setPendingWorkoutId(workoutId);
+        setSuccessMessage('Entrenamiento actualizado ✓');
       } else {
-        // The plan doesn't pin down createWorkout's return type, so tolerate
-        // a bare id string as well as anything id-bearing (a
-        // DocumentReference or a snapshot both expose `.id`).
-        const rawId = await createWorkout(duelId, currentUser.uid, exercises);
-        const newId = typeof rawId === 'string' ? rawId : rawId?.id ?? null;
-        setPendingWorkoutId(newId);
+        await createWorkout(duelId, currentUser.uid, exercises);
+        setSuccessMessage('Entrenamiento guardado ✓');
       }
-      setPhase('waiting');
+      setPhase('success');
     } catch (err) {
       setSubmitError('No pudimos guardar tu entrenamiento. Tus datos se conservaron: puedes reintentar.');
     } finally {
@@ -246,22 +173,10 @@ function SubirPrueba() {
     }
   }
 
-  if (phase === 'waiting') {
+  if (phase === 'success') {
     return (
       <Layout active="pruebas">
-        <div className="space-y-4">
-          {scoreToast ? (
-            <Toast message={scoreToast.message} variant={scoreToast.variant} />
-          ) : (
-            <Card>
-              <p role="status" className="text-on-surface">
-                {timedOut
-                  ? 'El cálculo continúa. Te llevamos de vuelta a tu Dashboard…'
-                  : 'Entrenamiento guardado. Calculando puntos…'}
-              </p>
-            </Card>
-          )}
-        </div>
+        <Toast message={successMessage} variant="success" />
       </Layout>
     );
   }
