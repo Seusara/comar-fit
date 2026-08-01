@@ -77,6 +77,25 @@ describe('SubirPrueba', () => {
     expect(screen.getByText(/240/)).toBeInTheDocument();
   });
 
+  it('prefills create mode from a validated daily routine payload', async () => {
+    renderSubirPrueba({
+      pathname: '/subir-prueba',
+      state: {
+        source: 'daily-routine',
+        exercises: [
+          { name: 'Flexiones', sets: 3, reps: 10, duration: 5 },
+          { name: 'Sentadillas', sets: 2, reps: 15, duration: 4 },
+        ],
+      },
+    });
+    await flushProfileFetch();
+
+    expect(screen.getAllByLabelText('Ejercicio')).toHaveLength(2);
+    expect(screen.getAllByLabelText('Ejercicio')[0]).toHaveValue('Flexiones');
+    expect(screen.getAllByLabelText('Series')[0]).toHaveValue(3);
+    expect(screen.getAllByLabelText('Minutos')[1]).toHaveValue(4);
+  });
+
   it('feeds useCalorieEstimate the real profile weight from the Firestore user document', async () => {
     renderSubirPrueba();
 

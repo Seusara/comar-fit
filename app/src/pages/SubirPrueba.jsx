@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveDuel } from '../hooks/useActiveDuel';
 import { useWorkouts } from '../hooks/useWorkouts';
@@ -11,6 +11,7 @@ import Layout from '../components/Layout';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Toast from '../components/Toast';
+import { routineExercisesFromLocationState } from '../routines/routinePayload';
 
 // How long Subir Prueba waits, after a successful save, for the Firestore
 // listener (useWorkouts) to report the workout's status flipping to
@@ -65,6 +66,7 @@ function resultToken(workout) {
 function SubirPrueba() {
   const { workoutId } = useParams();
   const isEditMode = Boolean(workoutId);
+  const location = useLocation();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   // Defaults on every stub-hook destructure — see Dashboard.jsx for why.
@@ -82,7 +84,10 @@ function SubirPrueba() {
   // when handleSubmit fires — see the scored-watcher effect below for why.
   const baselineRef = useRef({ wasScored: false, token: null });
 
-  const [exercises, setExercises] = useState(() => (isEditMode ? [] : [createEmptyExercise()]));
+  const [exercises, setExercises] = useState(() => {
+    if (isEditMode) return [];
+    return routineExercisesFromLocationState(location.state) ?? [createEmptyExercise()];
+  });
   const [hasPrefilled, setHasPrefilled] = useState(false);
   const [isValid, setIsValid] = useState(false);
   const [submitting, setSubmitting] = useState(false);

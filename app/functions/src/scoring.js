@@ -14,6 +14,18 @@ const MET_BY_EXERCISE = {
   clappushups: 8,
   bulgariansquats: 6,
   sideplanks: 3,
+  activemarch: 3.5,
+  armcircles: 3,
+  hipmobility: 2.5,
+  jumpingjacks: 8,
+  glutebridge: 4,
+  backpackrow: 6,
+  backpackdeadlift: 6,
+  bandrow: 5,
+  dumbbellpress: 6,
+  stretching: 2.5,
+  controlledbreathing: 1.5,
+  legstretch: 2.5,
 };
 
 const EXERCISE_ALIASES = {
@@ -37,6 +49,20 @@ const EXERCISE_ALIASES = {
   bulgariansquats: 'bulgariansquats',
   planchaslaterales: 'sideplanks',
   sideplanks: 'sideplanks',
+  marchaactiva: 'activemarch',
+  circulosdebrazos: 'armcircles',
+  movilidaddecadera: 'hipmobility',
+  saltosdetijera: 'jumpingjacks',
+  puentedegluteo: 'glutebridge',
+  plancha: 'planks',
+  escaladores: 'mountainclimbers',
+  remoconmochila: 'backpackrow',
+  pesomuertoconmochila: 'backpackdeadlift',
+  remoconbanda: 'bandrow',
+  pressconmancuernas: 'dumbbellpress',
+  estiramientogeneral: 'stretching',
+  respiracioncontrolada: 'controlledbreathing',
+  estiramientodepiernas: 'legstretch',
 };
 
 function normalizeExerciseId(exercise) {

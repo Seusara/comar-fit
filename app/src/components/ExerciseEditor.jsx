@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import Select from './Select';
 import Input from './Input';
 import Button from './Button';
+import { ROUTINE_CATALOG } from '../routines/catalog';
 
 /**
  * Local exercise catalog (Task 5's `src/domain/exercises.js` isn't built in
@@ -42,7 +43,7 @@ import Button from './Button';
  * items 2 and 3 above are exact, ready-to-fix diffs once that conversation
  * happens; item 1 needs a decision on which side owns the join key.
  */
-export const EXERCISE_CATALOG = [
+const BASE_EXERCISE_CATALOG = [
   'Flexiones',
   'Sentadillas',
   'Abdominales',
@@ -55,6 +56,11 @@ export const EXERCISE_CATALOG = [
   'Planchas',
   'Planchas Laterales',
 ];
+
+export const EXERCISE_CATALOG = [...new Set([
+  ...BASE_EXERCISE_CATALOG,
+  ...ROUTINE_CATALOG.map((exercise) => exercise.name),
+])];
 
 // Global Constraints (docs/superpowers/plans/2026-07-31-comar-fit-phase2-min.md).
 export const MIN_EXERCISES = 1;
