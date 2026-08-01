@@ -4,12 +4,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from './App';
 import { useAuth } from './contexts/AuthContext';
 import { findActiveDuelForUser } from './firebase/firestore';
+import { useActiveDuel } from './hooks/useActiveDuel';
+import { useWorkouts } from './hooks/useWorkouts';
+import { useDuelScore } from './hooks/useDuelScore';
 
 vi.mock('./contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
   useAuth: vi.fn(),
 }));
 vi.mock('./firebase/firestore');
+vi.mock('./hooks/useActiveDuel');
+vi.mock('./hooks/useWorkouts');
+vi.mock('./hooks/useDuelScore');
 
 function setRoute(path) {
   window.history.pushState({}, '', path);
@@ -18,6 +24,9 @@ function setRoute(path) {
 describe('App routing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useActiveDuel.mockReturnValue({ duel: { duelId: 'duel-1', userA_uid: 'aaron', userB_uid: 'alexandra' }, loading: false, error: null });
+    useWorkouts.mockReturnValue({ workouts: [], loading: false, error: null });
+    useDuelScore.mockReturnValue({ weekData: null, loading: false, error: null });
   });
 
   it('redirects unauthenticated users to /login from a protected route', async () => {

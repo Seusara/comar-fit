@@ -58,7 +58,7 @@ describe('Perfil', () => {
     const name = screen.getByLabelText('Nombre');
     await user.clear(name);
     await user.type(name, 'Aaron Interian');
-    await user.click(screen.getByLabelText('Ocultar ubicación de capturas'));
+    await user.click(screen.getByLabelText(/Ocultar ubicaci.n de capturas/i));
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
     await waitFor(() => expect(updateUserProfile).toHaveBeenCalledWith('aaron', expect.objectContaining({
@@ -91,7 +91,7 @@ describe('Perfil', () => {
 
   it('does not consume the monthly update when physical data is unchanged', () => {
     renderProfile();
-    expect(screen.getByRole('button', { name: 'Actualizar datos fÃ­sicos' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Actualizar datos f.sicos/i })).toBeDisabled();
     expect(updatePhysicalProfile).not.toHaveBeenCalled();
   });
 

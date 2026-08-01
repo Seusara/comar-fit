@@ -126,12 +126,13 @@ describe('firestore.rules', () => {
     });
 
     const alice = testEnv.authenticatedContext('alice-uid');
-    const batch = writeBatch(alice.firestore());
-    batch.update(doc(alice.firestore(), 'users', 'alice-uid'), {
+    const aliceDb = alice.firestore();
+    const batch = writeBatch(aliceDb);
+    batch.update(doc(aliceDb, 'users', 'alice-uid'), {
       gender: 'F', weight: 62,
       physicalProfileUpdatedAt: serverTimestamp(), updatedAt: serverTimestamp(),
     });
-    batch.update(doc(alice.firestore(), 'scoringProfiles', 'alice-uid'), { gender: 'F', weight: 62 });
+    batch.update(doc(aliceDb, 'scoringProfiles', 'alice-uid'), { gender: 'F', weight: 62 });
     await assertSucceeds(batch.commit());
   });
 
@@ -151,11 +152,12 @@ describe('firestore.rules', () => {
     });
 
     const alice = testEnv.authenticatedContext('alice-uid');
-    const batch = writeBatch(alice.firestore());
-    batch.update(doc(alice.firestore(), 'users', 'alice-uid'), {
+    const aliceDb = alice.firestore();
+    const batch = writeBatch(aliceDb);
+    batch.update(doc(aliceDb, 'users', 'alice-uid'), {
       ...physical, physicalProfileUpdatedAt: serverTimestamp(), updatedAt: serverTimestamp(),
     });
-    batch.update(doc(alice.firestore(), 'scoringProfiles', 'alice-uid'), physical);
+    batch.update(doc(aliceDb, 'scoringProfiles', 'alice-uid'), physical);
     await assertFails(batch.commit());
   });
 
