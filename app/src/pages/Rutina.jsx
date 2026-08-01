@@ -9,6 +9,7 @@ import { useUserProfile } from '../hooks/useUserProfile';
 import { useActiveDuel } from '../hooks/useActiveDuel';
 import { generateDailyRoutine, routineHistoryKey, routineProgressKey } from '../routines/generateDailyRoutine';
 import { routineDayKey } from '../routines/routineDay';
+import { parseRoutineHistory, serializeRoutineHistory } from '../routines/routineHistory';
 
 function readProgress(key) {
   try {
@@ -32,7 +33,7 @@ function Rutina() {
   const dayKey = routineDayKey(new Date(), duel?.timezone);
   const progressKey = routineProgressKey(currentUser?.uid ?? 'guest', dayKey);
   const historyKey = routineHistoryKey(currentUser?.uid ?? 'guest');
-  const recentExerciseIds = readProgress(historyKey);
+  const recentExerciseIds = parseRoutineHistory(localStorage.getItem(historyKey), dayKey);
   const routine = useMemo(() => generateDailyRoutine({
     profile: profile ?? {}, uid: currentUser?.uid ?? 'guest', dayKey, recentExerciseIds,
   // recentExerciseIds is a storage snapshot; profile/day changes are the regeneration boundaries.
@@ -45,8 +46,9 @@ function Rutina() {
   }, [progressKey]);
 
   useEffect(() => {
-    localStorage.setItem(historyKey, JSON.stringify(routine.phases.flatMap((phase) => phase.exercises.map((exercise) => exercise.id))));
-  }, [historyKey, routine]);
+    const ids = routine.phases.flatMap((phase) => phase.exercises.map((exercise) => exercise.id));
+    localStorage.setItem(historyKey, serializeRoutineHistory(dayKey, ids));
+  }, [dayKey, historyKey, routine]);
 
   const exercises = routine.phases.flatMap((phase) => phase.exercises);
   const validIds = new Set(exercises.map((exercise) => exercise.id));
