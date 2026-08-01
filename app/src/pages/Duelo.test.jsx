@@ -15,6 +15,10 @@ const DUEL = {
   userB_uid: 'alexandra',
   createdAt: new Date('2026-07-20T18:00:00Z'),
   participantNames: { aaron: 'Aaron', alexandra: 'Alexandra' },
+  participantProfiles: {
+    aaron: { displayName: 'Aaron', avatarUrl: 'aaron.webp' },
+    alexandra: { displayName: 'Alexandra', avatarUrl: 'alexandra.webp' },
+  },
 };
 
 const WORKOUTS = [
@@ -46,6 +50,8 @@ describe('Duelo', () => {
     expect(screen.getByRole('heading', { name: /duelo semanal/i })).toBeInTheDocument();
     expect(screen.getAllByText('Aaron').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Alexandra').length).toBeGreaterThan(0);
+    expect(screen.getByRole('img', { name: 'Foto de Aaron' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Foto de Alexandra' })).toBeInTheDocument();
     expect(screen.getByText(/ganó Aaron/i)).toBeInTheDocument();
     expect(screen.getByText(/^empate$/i)).toBeInTheDocument();
     expect(screen.getAllByTestId('week-row').map((row) => row.dataset.weekId))

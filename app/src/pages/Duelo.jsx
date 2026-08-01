@@ -67,8 +67,8 @@ function Duelo() {
             </span>
           </div>
           <VSDisplay
-            participantA={{ name: nameA, status: `${currentWeek.participantA.activeDays}/7 días` }}
-            participantB={{ name: nameB, status: `${currentWeek.participantB.activeDays}/7 días` }}
+            participantA={{ name: nameA, avatarUrl: duel.participantProfiles?.[uidA]?.avatarUrl, status: `${currentWeek.participantA.activeDays}/7 días` }}
+            participantB={{ name: nameB, avatarUrl: duel.participantProfiles?.[uidB]?.avatarUrl, status: `${currentWeek.participantB.activeDays}/7 días` }}
           />
           <div className="flex justify-around items-center gap-4">
             <ProgressRing

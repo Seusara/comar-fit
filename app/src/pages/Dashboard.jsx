@@ -104,8 +104,8 @@ function Dashboard() {
         </section>
 
         <VSDisplay
-          participantA={{ name: nameA, status: `${activityA.activeDays}/7 días` }}
-          participantB={{ name: nameB, status: `${activityB.activeDays}/7 días` }}
+          participantA={{ name: nameA, avatarUrl: duel?.participantProfiles?.[uidA]?.avatarUrl, status: `${activityA.activeDays}/7 días` }}
+          participantB={{ name: nameB, avatarUrl: duel?.participantProfiles?.[uidB]?.avatarUrl, status: `${activityB.activeDays}/7 días` }}
         />
 
         <section className="flex justify-around items-center gap-4">

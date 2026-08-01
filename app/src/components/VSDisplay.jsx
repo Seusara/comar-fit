@@ -1,16 +1,14 @@
-// participant shape: { name: string, initial?: string, score?: number, status?: string }
+import Avatar from './Avatar';
+
+// participant shape: { name: string, initial?: string, avatarUrl?: string, score?: number, status?: string }
 // `initial` defaults to the first letter of `name` when omitted. `status`
 // (e.g. "Pendiente" / "Completado") and `score` are both optional so this
 // works before and after a workout is scored.
 function Participant({ participant, borderClass }) {
-  const initial = participant.initial || participant.name?.charAt(0)?.toUpperCase() || '?';
-
   return (
     <div className="flex flex-col items-center flex-1">
-      <div
-        className={`relative mb-2 w-20 h-20 rounded-full border-2 ${borderClass} bg-surface-container-high flex items-center justify-center`}
-      >
-        <span className="font-stats-num text-2xl text-on-surface">{initial}</span>
+      <div className="relative mb-2">
+        <Avatar name={participant.name} src={participant.avatarUrl} size="w-20 h-20" className={`border-2 ${borderClass}`} />
         {participant.status && (
           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-surface-container-highest text-on-surface px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide font-extrabold border border-outline-variant/30">
             {participant.status}

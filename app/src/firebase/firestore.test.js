@@ -238,6 +238,10 @@ describe('createDuel / findActiveDuelForUser', () => {
         [userAUid]: 'Aaron',
         [userBUid]: 'Alexandra',
       },
+      participantProfiles: {
+        [userAUid]: { displayName: 'Aaron', avatarUrl: '' },
+        [userBUid]: { displayName: 'Alexandra', avatarUrl: '' },
+      },
     });
 
     // Reading B's side of the duel requires being signed in as B (the read

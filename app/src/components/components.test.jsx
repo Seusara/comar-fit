@@ -241,8 +241,19 @@ describe('VSDisplay', () => {
     expect(screen.getByText('36')).toBeInTheDocument();
     expect(screen.getByText('50')).toBeInTheDocument();
     expect(screen.getByText('VS')).toBeInTheDocument();
+    });
+
+    it('renders participant profile photos when provided', () => {
+      render(
+        <VSDisplay
+          participantA={{ name: 'Aaron', avatarUrl: 'aaron.webp' }}
+          participantB={{ name: 'Alexa', avatarUrl: 'alexa.webp' }}
+        />
+      );
+      expect(screen.getByRole('img', { name: 'Foto de Aaron' })).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: 'Foto de Alexa' })).toBeInTheDocument();
+    });
   });
-});
 
 describe('CountdownTimer', () => {
   beforeEach(() => {

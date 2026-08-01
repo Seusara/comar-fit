@@ -91,6 +91,14 @@ export async function findActiveDuelForUser(uid) {
         profileSnapshot.exists() ? profileSnapshot.data().displayName : null,
       ])
     ),
+    participantProfiles: Object.fromEntries(
+      profileSnapshots.map((profileSnapshot, index) => [
+        participantUids[index],
+        profileSnapshot.exists()
+          ? { displayName: profileSnapshot.data().displayName ?? null, avatarUrl: profileSnapshot.data().avatarUrl ?? '' }
+          : { displayName: null, avatarUrl: '' },
+      ])
+    ),
   };
 }
 
