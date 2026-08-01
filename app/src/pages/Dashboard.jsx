@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveDuel } from '../hooks/useActiveDuel';
-import { useWorkouts } from '../hooks/useWorkouts';
-import { useDuelScore } from '../hooks/useDuelScore';
+import { useDuelWorkouts } from '../hooks/useDuelWorkouts';
+import { compareActiveDays, deriveParticipantActivity } from '../duel/activeDays';
 import { duelDayNumber, endOfCurrentDuelDay, formatWorkoutDate, toDate } from '../utils/dates';
 import Layout from '../components/Layout';
 import Card from '../components/Card';
@@ -33,22 +33,13 @@ function formatWorkoutTitle(workout) {
 function Dashboard() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  // Defaults on every stub-hook destructure: the real Task 5 hooks may not
-  // return exactly these key names (the plan's literal text says
-  // `{data, loading, error}`), and a missing key must degrade to an empty
-  // state rather than crash the whole Dashboard.
   const { duel = null, loading: duelLoading = false, error: duelError = null } = useActiveDuel() ?? {};
   const duelId = duel?.duelId;
-  const {
-    weekData = null,
-    loading: scoreLoading = false,
-    error: scoreError = null,
-  } = useDuelScore(duelId) ?? {};
   const {
     workouts = [],
     loading: workoutsLoading = false,
     error: workoutsError = null,
-  } = useWorkouts(duelId, currentUser?.uid) ?? {};
+  } = useDuelWorkouts(duelId) ?? {};
 
   // Countdown target derived from the duel's own week boundaries (real UTC
   // Timestamps written by firebase/firestore.js's computeWeekBoundaries)
@@ -64,8 +55,8 @@ function Dashboard() {
     [weekStartMs, weekEndMs]
   );
 
-  const loading = duelLoading || scoreLoading || workoutsLoading;
-  const error = duelError || scoreError || workoutsError || null;
+  const loading = duelLoading || workoutsLoading;
+  const error = duelError || workoutsError || null;
 
   if (loading) {
     return (
@@ -87,18 +78,20 @@ function Dashboard() {
     );
   }
 
-  // `weeks/{weekId}` keys every per-participant map by uid (design spec
-  // "duels/{duelId}/weeks/{weekId}"), so scores/streaks are looked up with
-  // the duel's participant uids. A missing entry means "no aggregate yet",
-  // which the spec says must render as zero.
   const uidA = duel?.userA_uid;
   const uidB = duel?.userB_uid;
   const nameA = duel?.participantNames?.[uidA] || labelForUid(uidA, 'Jugador 1');
   const nameB = duel?.participantNames?.[uidB] || labelForUid(uidB, 'Jugador 2');
-  const scoreA = weekData?.scores?.[uidA]?.score ?? 0;
-  const scoreB = weekData?.scores?.[uidB]?.score ?? 0;
-  const streakA = weekData?.streaks?.[uidA] ?? 0;
-  const streakB = weekData?.streaks?.[uidB] ?? 0;
+  const activityA = deriveParticipantActivity(workouts, uidA, duel);
+  const activityB = deriveParticipantActivity(workouts, uidB, duel);
+  const mine = currentUser?.uid === uidB ? activityB : activityA;
+  const rival = currentUser?.uid === uidB ? activityA : activityB;
+  const comparison = compareActiveDays(mine.activeDays, rival.activeDays);
+  const comparisonCopy = {
+    ahead: 'Vas adelante',
+    behind: 'Tu rival va adelante',
+    tied: 'Van iguales',
+  }[comparison];
 
   // "Día X de 7" measured against the duel's real week start, not the local
   // browser's day-of-week.
@@ -112,19 +105,23 @@ function Dashboard() {
         </section>
 
         <VSDisplay
-          participantA={{ name: nameA, score: scoreA }}
-          participantB={{ name: nameB, score: scoreB }}
+          participantA={{ name: nameA, status: `${activityA.activeDays}/7 días` }}
+          participantB={{ name: nameB, status: `${activityB.activeDays}/7 días` }}
         />
 
         <section className="flex justify-around items-center gap-4">
-          <ProgressRing percentage={scoreA} label={`Score de ${nameA}`} />
-          <ProgressRing percentage={scoreB} label={`Score de ${nameB}`} />
+          <ProgressRing percentage={activityA.percentage} label={`Días activos de ${nameA}`} />
+          <ProgressRing percentage={activityB.percentage} label={`Días activos de ${nameB}`} />
         </section>
 
         <section className="flex justify-around items-center gap-4">
-          <StreakBadge streak={streakA} />
-          <StreakBadge streak={streakB} />
+          <StreakBadge streak={activityA.streak} />
+          <StreakBadge streak={activityB.streak} />
         </section>
+
+        <p className="text-center text-primary-fixed-dim font-bold" aria-live="polite">
+          {comparisonCopy}
+        </p>
 
         <CountdownTimer targetTime={targetTime} />
 

@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useActiveDuel } from '../hooks/useActiveDuel';
 import { useWorkouts } from '../hooks/useWorkouts';
-import { useDuelScore } from '../hooks/useDuelScore';
+import { deriveParticipantActivity } from '../duel/activeDays';
 import { updatePhysicalProfile, updateUserProfile } from '../firebase/firestore';
 import { canUpdatePhysicalProfile, nextPhysicalProfileUpdateAt } from '../firebase/profilePolicy';
 import { logoutUser } from '../firebase/auth';
@@ -70,7 +70,6 @@ function Perfil() {
   const { profile, loading: profileLoading, error: profileError, refresh } = useUserProfile();
   const { duel, loading: duelLoading, error: duelError } = useActiveDuel();
   const { workouts, loading: workoutsLoading, error: workoutsError } = useWorkouts(duel?.duelId, currentUser?.uid);
-  const { weekData, loading: scoreLoading, error: scoreError } = useDuelScore(duel?.duelId);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [physicalSaving, setPhysicalSaving] = useState(false);
@@ -81,19 +80,20 @@ function Perfil() {
 
   const stats = useMemo(() => {
     const uid = currentUser?.uid;
+    const activity = deriveParticipantActivity(workouts, uid, duel);
     return {
       workouts: workouts?.length ?? 0,
       minutes: (workouts ?? []).reduce((total, workout) => total + (Number(workout.totalMinutes) || 0), 0),
-      streak: weekData?.streaks?.[uid] ?? 0,
-      score: weekData?.scores?.[uid]?.score ?? 0,
+      streak: activity.streak,
+      activeDays: activity.activeDays,
     };
-  }, [currentUser?.uid, weekData, workouts]);
+  }, [currentUser?.uid, duel, workouts]);
 
   const physicalEligible = canUpdatePhysicalProfile(profile);
   const physicalChanged = form.gender !== profile?.gender || Number(form.weight) !== Number(profile?.weight);
   const nextPhysicalDate = nextPhysicalProfileUpdateAt(profile);
-  const loading = profileLoading || duelLoading || workoutsLoading || scoreLoading;
-  const loadError = profileError || duelError || workoutsError || scoreError;
+  const loading = profileLoading || duelLoading || workoutsLoading;
+  const loadError = profileError || duelError || workoutsError;
 
   function change(event) {
     const { name, value, checked, type } = event.target;
@@ -171,7 +171,7 @@ function Perfil() {
             <Stat icon="fitness_center" value={`${stats.workouts} entrenamientos`} label="Registrados" />
             <Stat icon="timer" value={`${stats.minutes} min`} label="Tiempo acumulado" />
             <Stat icon="local_fire_department" value={`${stats.streak} días`} label="Racha actual" />
-            <Stat icon="bolt" value={`${stats.score} pts`} label="Puntuación semanal" />
+            <Stat icon="calendar_month" value={`${stats.activeDays} de 7`} label="Días activos" />
           </div>
         </section>
 

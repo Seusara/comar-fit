@@ -4,13 +4,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import Dashboard from './Dashboard';
 import { useActiveDuel } from '../hooks/useActiveDuel';
-import { useWorkouts } from '../hooks/useWorkouts';
-import { useDuelScore } from '../hooks/useDuelScore';
+import { useDuelWorkouts } from '../hooks/useDuelWorkouts';
 import { useAuth } from '../contexts/AuthContext';
 
 vi.mock('../hooks/useActiveDuel');
-vi.mock('../hooks/useWorkouts');
-vi.mock('../hooks/useDuelScore');
+vi.mock('../hooks/useDuelWorkouts');
 vi.mock('../contexts/AuthContext');
 
 // Wednesday of the duel week, so "Día X de 7" and the countdown are
@@ -31,25 +29,11 @@ const DEFAULT_DUEL = {
   error: null,
 };
 
-// Mirrors the design spec's `duels/{duelId}/weeks/{weekId}` document: every
-// per-participant map is keyed by uid, never by userA/userB.
-const DEFAULT_SCORE = {
-  weekData: {
-    scores: {
-      aaron: { score: 36, minuteScore: 50, exerciseScore: 12.5, repScore: 22.5, calorieScore: 60 },
-      alexandra: { score: 50, minuteScore: 60, exerciseScore: 25, repScore: 40, calorieScore: 75 },
-    },
-    streaks: { aaron: 7, alexandra: 8 },
-    lastWorkoutDay: { aaron: '2026-07-29', alexandra: '2026-07-29' },
-    recentActivity: [],
-    updatedAt: NOW.toISOString(),
-  },
-  loading: false,
-  error: null,
-};
 const DEFAULT_WORKOUTS = {
   workouts: [
-    { workoutId: 'w1', exercises: [{ name: 'Flexiones', sets: 3, reps: 15 }], totalMinutes: 30, date: '2026-07-29' },
+    { workoutId: 'a1', userId: 'aaron', exercises: [{ name: 'Flexiones', sets: 3, reps: 15 }], performedAt: new Date('2026-07-28T18:00:00Z') },
+    { workoutId: 'a2', userId: 'aaron', exercises: [{ name: 'Sentadillas', sets: 3, reps: 12 }], performedAt: new Date('2026-07-29T18:00:00Z') },
+    { workoutId: 'b1', userId: 'alexandra', exercises: [{ name: 'Burpees', sets: 2, reps: 10 }], performedAt: new Date('2026-07-29T19:00:00Z') },
   ],
   loading: false,
   error: null,
@@ -69,8 +53,7 @@ describe('Dashboard', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(NOW);
     useActiveDuel.mockReturnValue(DEFAULT_DUEL);
-    useDuelScore.mockReturnValue(DEFAULT_SCORE);
-    useWorkouts.mockReturnValue(DEFAULT_WORKOUTS);
+    useDuelWorkouts.mockReturnValue(DEFAULT_WORKOUTS);
     useAuth.mockReturnValue({ currentUser: { uid: 'aaron' }, authLoading: false });
   });
 
@@ -88,7 +71,7 @@ describe('Dashboard', () => {
   });
 
   it('shows an error message when a hook reports an error', () => {
-    useDuelScore.mockReturnValue({ weekData: null, loading: false, error: new Error('boom') });
+    useDuelWorkouts.mockReturnValue({ workouts: [], loading: false, error: new Error('boom') });
 
     renderDashboard();
 
@@ -96,36 +79,32 @@ describe('Dashboard', () => {
   });
 
   it('shows an empty-activity message when there are no workouts', () => {
-    useWorkouts.mockReturnValue({ workouts: [], loading: false, error: null });
+    useDuelWorkouts.mockReturnValue({ workouts: [], loading: false, error: null });
 
     renderDashboard();
 
     expect(screen.getByText(/aún no hay actividad/i)).toBeInTheDocument();
   });
 
-  it('renders both participants scores via distinct progress rings', () => {
+  it('renders both participants active days via distinct progress rings', () => {
     renderDashboard();
 
     const rings = screen.getAllByRole('progressbar');
     expect(rings).toHaveLength(2);
-    expect(rings[0]).toHaveAttribute('aria-valuenow', '36');
-    expect(rings[1]).toHaveAttribute('aria-valuenow', '50');
+    expect(rings[0]).toHaveAttribute('aria-valuenow', '29');
+    expect(rings[1]).toHaveAttribute('aria-valuenow', '14');
     expect(rings[0].getAttribute('aria-label')).not.toBe(rings[1].getAttribute('aria-label'));
   });
 
   it('renders both participants streaks', () => {
     renderDashboard();
 
-    expect(screen.getByText(/7 días/)).toBeInTheDocument();
-    expect(screen.getByText(/8 días/)).toBeInTheDocument();
+    expect(screen.getByText(/2 días/)).toBeInTheDocument();
+    expect(screen.getByText(/1 día/)).toBeInTheDocument();
   });
 
-  it('renders zeros when the week aggregate has no entry for a participant yet', () => {
-    useDuelScore.mockReturnValue({
-      weekData: { scores: {}, streaks: {}, lastWorkoutDay: {}, recentActivity: [], updatedAt: NOW.toISOString() },
-      loading: false,
-      error: null,
-    });
+  it('renders zeros when neither participant has completed a workout yet', () => {
+    useDuelWorkouts.mockReturnValue({ workouts: [], loading: false, error: null });
 
     renderDashboard();
 
@@ -135,26 +114,26 @@ describe('Dashboard', () => {
   });
 
   it('does not crash when a hook returns no keys at all (defensive defaults)', () => {
-    useWorkouts.mockReturnValue({});
-    useDuelScore.mockReturnValue({});
+    useDuelWorkouts.mockReturnValue({});
 
     renderDashboard();
 
     expect(screen.getByText(/aún no hay actividad/i)).toBeInTheDocument();
   });
 
-  it('renders recent activity from useWorkouts', () => {
+  it('renders recent duel activity', () => {
     renderDashboard();
 
     expect(screen.getByText(/flexiones/i)).toBeInTheDocument();
-    expect(screen.getByText('2026-07-29')).toBeInTheDocument();
+    expect(screen.getAllByText('2026-07-29')).not.toHaveLength(0);
   });
 
   it('renders the activity date from a Firestore-style performedAt Timestamp', () => {
-    useWorkouts.mockReturnValue({
+    useDuelWorkouts.mockReturnValue({
       workouts: [
         {
           workoutId: 'w1',
+          userId: 'aaron',
           exercises: [{ name: 'Flexiones', sets: 3, reps: 15 }],
           totalMinutes: 30,
           performedAt: { toDate: () => new Date('2026-07-29T18:00:00Z') },

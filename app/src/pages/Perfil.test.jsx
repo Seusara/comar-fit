@@ -7,7 +7,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useActiveDuel } from '../hooks/useActiveDuel';
 import { useWorkouts } from '../hooks/useWorkouts';
-import { useDuelScore } from '../hooks/useDuelScore';
 import { updateUserProfile, updatePhysicalProfile } from '../firebase/firestore';
 import { logoutUser } from '../firebase/auth';
 
@@ -15,7 +14,6 @@ vi.mock('../contexts/AuthContext');
 vi.mock('../hooks/useUserProfile');
 vi.mock('../hooks/useActiveDuel');
 vi.mock('../hooks/useWorkouts');
-vi.mock('../hooks/useDuelScore');
 vi.mock('../firebase/firestore');
 vi.mock('../firebase/auth');
 
@@ -35,9 +33,11 @@ describe('Perfil', () => {
     vi.clearAllMocks();
     useAuth.mockReturnValue({ currentUser: { uid: 'aaron', email: profile.email } });
     useUserProfile.mockReturnValue({ profile, loading: false, error: null, refresh: vi.fn() });
-    useActiveDuel.mockReturnValue({ duel: { duelId: 'duel-1', userA_uid: 'aaron', userB_uid: 'alex' }, loading: false, error: null });
-    useWorkouts.mockReturnValue({ workouts: [{ workoutId: 'w1', totalMinutes: 30 }, { workoutId: 'w2', totalMinutes: 25 }], loading: false, error: null });
-    useDuelScore.mockReturnValue({ weekData: { scores: { aaron: { score: 64 } }, streaks: { aaron: 7 } }, loading: false, error: null });
+    useActiveDuel.mockReturnValue({ duel: { duelId: 'duel-1', userA_uid: 'aaron', userB_uid: 'alex', weekStartDate: new Date('2026-07-27T00:00:00Z'), weekEndDate: new Date('2026-08-02T23:59:59Z') }, loading: false, error: null });
+    useWorkouts.mockReturnValue({ workouts: [
+      { workoutId: 'w1', userId: 'aaron', totalMinutes: 30, performedAt: new Date('2026-07-28T18:00:00Z') },
+      { workoutId: 'w2', userId: 'aaron', totalMinutes: 25, performedAt: new Date('2026-07-29T18:00:00Z') },
+    ], loading: false, error: null });
     updateUserProfile.mockResolvedValue(undefined);
     updatePhysicalProfile.mockResolvedValue(undefined);
     logoutUser.mockResolvedValue(undefined);
@@ -48,8 +48,7 @@ describe('Perfil', () => {
     expect(screen.getByRole('heading', { name: 'Aaron' })).toBeInTheDocument();
     expect(screen.getByText('2 entrenamientos')).toBeInTheDocument();
     expect(screen.getByText('55 min')).toBeInTheDocument();
-    expect(screen.getByText('7 días')).toBeInTheDocument();
-    expect(screen.getByText('64 pts')).toBeInTheDocument();
+    expect(screen.getByText('2 de 7')).toBeInTheDocument();
   });
 
   it('saves editable profile fields and preferences', async () => {
