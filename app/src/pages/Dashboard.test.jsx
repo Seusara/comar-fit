@@ -155,6 +155,24 @@ describe('Dashboard', () => {
     expect(screen.getByRole('heading', { name: /día 3 de 7/i })).toBeInTheDocument();
   });
 
+  it('starts a fresh zero-day week after Monday rollover', () => {
+    vi.setSystemTime(new Date('2026-08-03T18:00:00Z'));
+    useDuelWorkouts.mockReturnValue({
+      workouts: [
+        { workoutId: 'old-a', userId: 'aaron', performedAt: new Date('2026-07-29T18:00:00Z') },
+        { workoutId: 'old-b', userId: 'alexandra', performedAt: new Date('2026-07-30T18:00:00Z') },
+      ],
+      loading: false,
+      error: null,
+    });
+
+    renderDashboard();
+
+    expect(screen.getByRole('heading', { name: /día 1 de 7/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('progressbar').map((ring) => ring.getAttribute('aria-valuenow')))
+      .toEqual(['0', '0']);
+  });
+
   it('never renders a raw Firebase uid as a participant name', () => {
     const realUid = 'Xk9dpq2flmY7t3RbN0aZcQwEuI1s';
     useActiveDuel.mockReturnValue({

@@ -7,7 +7,7 @@ import logo from '../assets/logofit.png';
 const NAV_ITEMS = [
   { key: 'inicio', label: 'Inicio', icon: 'home', to: '/dashboard' },
   { key: 'rutina', label: 'Rutina', icon: 'fitness_center', to: '/rutina' },
-  { key: 'duelo', label: 'Duelo', icon: 'swords', to: '/dashboard' },
+  { key: 'duelo', label: 'Duelo', icon: 'swords', to: '/duelo' },
   { key: 'pruebas', label: 'Pruebas', icon: 'assignment', to: '/revisar-prueba' },
   { key: 'perfil', label: 'Perfil', icon: 'person', to: '/perfil' },
 ];

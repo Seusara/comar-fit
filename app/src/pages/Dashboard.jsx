@@ -1,10 +1,14 @@
-import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveDuel } from '../hooks/useActiveDuel';
 import { useDuelWorkouts } from '../hooks/useDuelWorkouts';
-import { compareActiveDays, deriveParticipantActivity } from '../duel/activeDays';
-import { duelDayNumber, endOfCurrentDuelDay, formatWorkoutDate, toDate } from '../utils/dates';
+import { compareActiveDays } from '../duel/activeDays';
+import {
+  deriveWeeklyDuelHistory,
+  endOfMexicoCityDay,
+  weekDayNumber,
+} from '../duel/weeklyHistory';
+import { formatWorkoutDate } from '../utils/dates';
 import Layout from '../components/Layout';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -47,14 +51,6 @@ function Dashboard() {
   // timestamps — not on the `duel` object, whose identity changes every
   // render — so CountdownTimer's effect doesn't restart its interval
   // constantly.
-  const weekStartMs = toDate(duel?.weekStartDate)?.getTime() ?? null;
-  const weekEndMs = toDate(duel?.weekEndDate)?.getTime() ?? null;
-  const targetTime = useMemo(
-    () => endOfCurrentDuelDay(duel),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [weekStartMs, weekEndMs]
-  );
-
   const loading = duelLoading || workoutsLoading;
   const error = duelError || workoutsError || null;
 
@@ -82,8 +78,10 @@ function Dashboard() {
   const uidB = duel?.userB_uid;
   const nameA = duel?.participantNames?.[uidA] || labelForUid(uidA, 'Jugador 1');
   const nameB = duel?.participantNames?.[uidB] || labelForUid(uidB, 'Jugador 2');
-  const activityA = deriveParticipantActivity(workouts, uidA, duel);
-  const activityB = deriveParticipantActivity(workouts, uidB, duel);
+  const now = new Date();
+  const { currentWeek } = deriveWeeklyDuelHistory(workouts, duel, now);
+  const activityA = currentWeek.participantA;
+  const activityB = currentWeek.participantB;
   const mine = currentUser?.uid === uidB ? activityB : activityA;
   const rival = currentUser?.uid === uidB ? activityA : activityB;
   const comparison = compareActiveDays(mine.activeDays, rival.activeDays);
@@ -95,7 +93,8 @@ function Dashboard() {
 
   // "Día X de 7" measured against the duel's real week start, not the local
   // browser's day-of-week.
-  const dayNumber = duelDayNumber(duel);
+  const dayNumber = weekDayNumber(now);
+  const targetTime = endOfMexicoCityDay(now);
 
   return (
     <Layout active="inicio">

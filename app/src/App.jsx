@@ -9,6 +9,7 @@ import RevisarPrueba from './pages/RevisarPrueba';
 import Home from './pages/Home';
 import Perfil from './pages/Perfil';
 import Rutina from './pages/Rutina';
+import Duelo from './pages/Duelo';
 
 function RequireAuth({ children }) {
   const { currentUser, authLoading } = useAuth();
@@ -45,6 +46,14 @@ function App() {
             element={
               <RequireAuth>
                 <Rutina />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/duelo"
+            element={
+              <RequireAuth>
+                <Duelo />
               </RequireAuth>
             }
           />
