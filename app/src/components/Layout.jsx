@@ -3,10 +3,10 @@ import logo from '../assets/logofit.png';
 
 // Phase 2.Mín builds the Dashboard and the workout history, so those two
 // items route somewhere real (any item with a `to` renders as a Link). The
-// remaining inert placeholders are expected scope, not a bug (Rutina/Duelo).
+// Duelo still reuses the live dashboard; every navigation item has a real route.
 const NAV_ITEMS = [
   { key: 'inicio', label: 'Inicio', icon: 'home', to: '/dashboard' },
-  { key: 'rutina', label: 'Rutina', icon: 'fitness_center', to: '/subir-prueba' },
+  { key: 'rutina', label: 'Rutina', icon: 'fitness_center', to: '/rutina' },
   { key: 'duelo', label: 'Duelo', icon: 'swords', to: '/dashboard' },
   { key: 'pruebas', label: 'Pruebas', icon: 'assignment', to: '/revisar-prueba' },
   { key: 'perfil', label: 'Perfil', icon: 'person', to: '/perfil' },

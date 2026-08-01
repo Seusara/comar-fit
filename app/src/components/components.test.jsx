@@ -120,7 +120,7 @@ describe('Layout', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('link', { name: /rutina/i })).toHaveAttribute('href', '/subir-prueba');
+    expect(screen.getByRole('link', { name: /rutina/i })).toHaveAttribute('href', '/rutina');
     expect(screen.getByRole('link', { name: /duelo/i })).toHaveAttribute('href', '/dashboard');
   });
 
