@@ -1,21 +1,34 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Register from './pages/Register';
+
+// Route-based code splitting: each page becomes its own chunk, downloaded
+// only when the user actually navigates there, instead of one ~720kB bundle
+// shipped up front. Login/Register are the two entry points nearly every
+// session hits first, so keeping those eagerly bundled avoids an extra
+// network round-trip before the user can even sign in; everything reachable
+// only after auth is lazy.
 import Login from './pages/Login';
-import ConnectPartner from './pages/ConnectPartner';
-import Dashboard from './pages/Dashboard';
-import SubirPrueba from './pages/SubirPrueba';
-import RevisarPrueba from './pages/RevisarPrueba';
-import Home from './pages/Home';
-import Perfil from './pages/Perfil';
-import Rutina from './pages/Rutina';
-import Duelo from './pages/Duelo';
+import Register from './pages/Register';
+
+const ConnectPartner = lazy(() => import('./pages/ConnectPartner'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const SubirPrueba = lazy(() => import('./pages/SubirPrueba'));
+const RevisarPrueba = lazy(() => import('./pages/RevisarPrueba'));
+const Home = lazy(() => import('./pages/Home'));
+const Perfil = lazy(() => import('./pages/Perfil'));
+const Rutina = lazy(() => import('./pages/Rutina'));
+const Duelo = lazy(() => import('./pages/Duelo'));
+
+function RouteFallback() {
+  return <p role="status" className="text-on-surface p-8">Cargando...</p>;
+}
 
 function RequireAuth({ children }) {
   const { currentUser, authLoading } = useAuth();
   if (authLoading) return <p className="text-on-surface p-8">Cargando...</p>;
   if (!currentUser) return <Navigate to="/login" replace />;
-  return children;
+  return <Suspense fallback={<RouteFallback />}>{children}</Suspense>;
 }
 
 function App() {
