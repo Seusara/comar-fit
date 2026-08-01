@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.env.local
+.firebase
+.firebase-data
+.firebase-config
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+emulator-*.log
+firebase-export-*

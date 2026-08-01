@@ -1,0 +1,192 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isDuelParticipant(data) {
+      return isSignedIn() &&
+        (data.userA_uid == request.auth.uid || data.userB_uid == request.auth.uid);
+    }
+
+    function hasMetricWeights(weights) {
+      return weights.keys().hasOnly(['minutes', 'exercises', 'reps', 'calories']) &&
+        weights.minutes == 0.25 &&
+        weights.exercises == 0.25 &&
+        weights.reps == 0.25 &&
+        weights.calories == 0.25;
+    }
+
+    function hasScoringUser(users, uid) {
+      let scoringUser = users[uid];
+      let privateUser = get(/databases/$(database)/documents/users/$(uid)).data;
+      return scoringUser.keys().hasOnly(['gender', 'weightKg']) &&
+        scoringUser.gender == privateUser.gender &&
+        scoringUser.weightKg == privateUser.weight;
+    }
+
+    function hasValidPhysicalProfile(data) {
+      return data.gender in ['M', 'F'] &&
+        data.weight is number &&
+        data.weight >= 20 &&
+        data.weight <= 500;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) &&
+        request.resource.data.keys().hasAll([
+          'uid', 'email', 'displayName', 'gender', 'age', 'weight', 'height',
+          'experienceLevel', 'createdAt', 'updatedAt'
+        ]) &&
+        request.resource.data.keys().hasOnly([
+          'uid', 'email', 'displayName', 'avatarUrl', 'gender', 'age', 'weight',
+          'height', 'experienceLevel', 'objective', 'equipment',
+          'preferredWorkoutMinutes', 'usualWorkoutTime', 'notificationsEnabled',
+          'hideScreenshotLocation', 'physicalProfileUpdatedAt', 'createdAt', 'updatedAt'
+        ]) &&
+        request.resource.data.uid == userId &&
+        request.resource.data.email == request.auth.token.email;
+      allow update: if isOwner(userId) && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'avatarUrl', 'age', 'height', 'experienceLevel',
+          'objective', 'equipment', 'preferredWorkoutMinutes', 'usualWorkoutTime',
+          'notificationsEnabled', 'hideScreenshotLocation', 'updatedAt'
+        ]) || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'gender', 'weight', 'physicalProfileUpdatedAt', 'updatedAt'
+          ]) &&
+          request.resource.data.physicalProfileUpdatedAt == request.time &&
+          hasValidPhysicalProfile(request.resource.data) &&
+          (request.resource.data.gender != resource.data.gender ||
+            request.resource.data.weight != resource.data.weight) &&
+          (!resource.data.keys().hasAny(['physicalProfileUpdatedAt']) ||
+            request.time >= resource.data.physicalProfileUpdatedAt + duration.value(30, 'd')) &&
+          getAfter(/databases/$(database)/documents/scoringProfiles/$(userId)).data.gender == request.resource.data.gender &&
+          getAfter(/databases/$(database)/documents/scoringProfiles/$(userId)).data.weight == request.resource.data.weight
+        )
+      );
+      allow delete: if false;
+    }
+
+    match /publicProfiles/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isOwner(userId) &&
+        request.resource.data.keys().hasOnly(['displayName', 'avatarUrl']) &&
+        request.resource.data.keys().hasAll(['displayName', 'avatarUrl']) &&
+        (request.method == 'create' ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'avatarUrl']));
+      allow delete: if false;
+    }
+
+    match /emailLookups/{normalizedEmail} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn() &&
+        request.auth.token.email == normalizedEmail &&
+        request.resource.data.keys().hasOnly(['uid']) &&
+        request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /scoringProfiles/{userId} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isOwner(userId) &&
+        request.resource.data.keys().hasOnly(['gender', 'weight']) &&
+        request.resource.data.keys().hasAll(['gender', 'weight']) &&
+        hasValidPhysicalProfile(request.resource.data);
+      allow update: if isOwner(userId) &&
+        request.resource.data.keys().hasOnly(['gender', 'weight']) &&
+        request.resource.data.keys().hasAll(['gender', 'weight']) &&
+        hasValidPhysicalProfile(request.resource.data) &&
+        getAfter(/databases/$(database)/documents/users/$(userId)).data.gender == request.resource.data.gender &&
+        getAfter(/databases/$(database)/documents/users/$(userId)).data.weight == request.resource.data.weight &&
+        getAfter(/databases/$(database)/documents/users/$(userId)).data.physicalProfileUpdatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /duels/{duelId} {
+      allow read: if isDuelParticipant(resource.data);
+      allow create: if isSignedIn() &&
+        request.auth.uid == request.resource.data.userA_uid &&
+        request.resource.data.keys().hasOnly([
+          'duelId', 'userA_uid', 'userB_uid', 'weekStartDate', 'weekEndDate',
+          'status', 'timezone', 'scoringVersion', 'scoringSnapshot', 'rules', 'createdAt'
+        ]) &&
+        request.resource.data.keys().hasAll([
+          'duelId', 'userA_uid', 'userB_uid', 'weekStartDate', 'weekEndDate',
+          'status', 'timezone', 'scoringVersion', 'scoringSnapshot', 'rules', 'createdAt'
+        ]) &&
+        request.resource.data.duelId == duelId &&
+        (duelId == request.resource.data.userA_uid + '_' + request.resource.data.userB_uid ||
+          duelId == request.resource.data.userB_uid + '_' + request.resource.data.userA_uid) &&
+        request.resource.data.userA_uid != request.resource.data.userB_uid &&
+        request.resource.data.status == 'active' &&
+        request.resource.data.timezone == 'America/Mexico_City' &&
+        request.resource.data.scoringVersion == 1 &&
+        request.resource.data.scoringSnapshot.keys().hasOnly(['users', 'metricsWeight']) &&
+        request.resource.data.scoringSnapshot.users.keys().hasOnly([
+          request.resource.data.userA_uid, request.resource.data.userB_uid
+        ]) &&
+        hasScoringUser(request.resource.data.scoringSnapshot.users, request.resource.data.userA_uid) &&
+        hasScoringUser(request.resource.data.scoringSnapshot.users, request.resource.data.userB_uid) &&
+        hasMetricWeights(request.resource.data.scoringSnapshot.metricsWeight) &&
+        request.resource.data.rules.keys().hasOnly(['normalizeByGender', 'metricsWeight']) &&
+        request.resource.data.rules.normalizeByGender == true &&
+        hasMetricWeights(request.resource.data.rules.metricsWeight);
+      allow update, delete: if false;
+
+      match /workouts/{workoutId} {
+        // Read: owner or duel participant
+        allow read: if isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data) &&
+          resource.data.userId == request.auth.uid;
+        
+        allow create: if isOwner(request.resource.data.userId) &&
+          isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data) &&
+          request.resource.data.duelId == duelId &&
+          request.resource.data.keys().hasOnly([
+            'userId', 'duelId', 'exercises', 'performedAt', 'createdAt',
+            'updatedAt', 'revision'
+          ]) &&
+          request.resource.data.exercises is list &&
+          request.resource.data.exercises.size() >= 1 &&
+          request.resource.data.exercises.size() <= 20 &&
+          request.resource.data.performedAt == request.time &&
+          request.resource.data.createdAt == request.time &&
+          request.resource.data.updatedAt == request.time;
+        
+        // Update/Delete: only allowed within 10-minute edit window
+        allow update: if isOwner(resource.data.userId) &&
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.duelId == resource.data.duelId &&
+          request.resource.data.performedAt == resource.data.performedAt &&
+          request.resource.data.createdAt == resource.data.createdAt &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'exercises', 'updatedAt', 'revision'
+          ]) &&
+          request.time < resource.data.editableUntil;
+        
+        allow delete: if isOwner(resource.data.userId) &&
+          request.time < resource.data.editableUntil;
+      }
+
+      match /weeks/{weekId} {
+        allow read: if isDuelParticipant(
+          get(/databases/$(database)/documents/duels/$(duelId)).data
+        );
+        allow write: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

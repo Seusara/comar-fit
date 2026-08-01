@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .glass-card {
+    background: rgba(28, 28, 30, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .action-gradient {
+    background: linear-gradient(135deg, #00dbe9 0%, #ad00fe 100%);
+  }
+  /* Tap feedback (scale-down on :active) that respects prefers-reduced-motion.
+     No transform/transition is applied at all unless the user's system
+     allows motion, rather than just skipping the animation duration. */
+  .tap-scale {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tap-scale {
+      transition: transform 150ms ease;
+    }
+    .tap-scale:active {
+      transform: scale(0.96);
+    }
+  }
+}

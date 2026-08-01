@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DuoFit - Revisar Prueba</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .glass-card {
+            background: rgba(28, 28, 30, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .action-gradient {
+            background: linear-gradient(135deg, #00dbe9 0%, #ad00fe 100%);
+        }
+        .approve-gradient {
+            background: linear-gradient(135deg, #00c853 0%, #b2ff59 100%);
+        }
+        .reject-gradient {
+            background: linear-gradient(135deg, #d50000 0%, #ff5252 100%);
+        }
+        .streak-glow {
+            filter: drop-shadow(0 0 15px rgba(255, 243, 246, 0.3));
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error-container": "#ffdad6",
+                    "secondary-fixed-dim": "#e5b4ff",
+                    "inverse-primary": "#006970",
+                    "on-primary": "#00363a",
+                    "primary-fixed-dim": "#00dbe9",
+                    "tertiary-fixed-dim": "#ffaed9",
+                    "outline-variant": "#3b494b",
+                    "surface-container": "#201f1f",
+                    "on-primary-fixed-variant": "#004f54",
+                    "surface-container-lowest": "#0e0e0e",
+                    "on-secondary": "#4f0077",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-tint": "#00dbe9",
+                    "inverse-surface": "#e5e2e1",
+                    "on-secondary-fixed": "#30004b",
+                    "on-surface": "#e5e2e1",
+                    "tertiary": "#fff3f6",
+                    "tertiary-fixed": "#ffd8ea",
+                    "secondary-fixed": "#f5d9ff",
+                    "inverse-on-surface": "#313030",
+                    "surface-container-high": "#2a2a2a",
+                    "secondary": "#e5b4ff",
+                    "on-tertiary-fixed-variant": "#890064",
+                    "on-error": "#690005",
+                    "on-tertiary": "#610046",
+                    "on-primary-fixed": "#002022",
+                    "on-tertiary-fixed": "#3c002a",
+                    "surface-container-highest": "#353534",
+                    "secondary-container": "#ad00fe",
+                    "surface-bright": "#393939",
+                    "primary-container": "#00f0ff",
+                    "on-background": "#e5e2e1",
+                    "surface-dim": "#131313",
+                    "error": "#ffb4ab",
+                    "surface": "#131313",
+                    "on-secondary-container": "#fef0ff",
+                    "on-tertiary-container": "#b40084",
+                    "on-primary-container": "#006970",
+                    "error-container": "#93000a",
+                    "surface-variant": "#353534",
+                    "on-surface-variant": "#b9cacb",
+                    "tertiary-container": "#ffcbe4",
+                    "on-secondary-fixed-variant": "#7000a7",
+                    "background": "#131313",
+                    "primary": "#dbfcff",
+                    "outline": "#849495",
+                    "primary-fixed": "#7df4ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "24px",
+                    "sm": "16px",
+                    "margin_desktop": "48px",
+                    "xl": "64px",
+                    "margin_mobile": "20px",
+                    "xs": "8px",
+                    "lg": "40px",
+                    "base": "4px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Montserrat"],
+                    "display-lg": ["Montserrat"],
+                    "body-md": ["Inter"],
+                    "display-md": ["Montserrat"],
+                    "stats-num": ["Montserrat"],
+                    "body-lg": ["Inter"],
+                    "headline-lg-mobile": ["Montserrat"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-md": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "stats-num": ["24px", {"lineHeight": "24px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/10 shadow-sm h-16">
+<div class="flex justify-between items-center px-margin_mobile h-full w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-primary-fixed-dim/30">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of Alex, a fit male in his late 20s with a confident smile, wearing high-performance athletic gear. The lighting is cinematic with cyan and magenta rim lights, reflecting an elite kinetic gaming aesthetic. The background is a soft-focus high-end gym environment with deep shadows and glowing blue accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbHWAMx_a7E32R6hoteGN5BSW5GDkYA1stlhMpvUV1jX35YVzTu51SGT8K7zQXY-GCEsDL8bT2W7wFZUI3zg1s1gjF4kQAcnsBhSSq6JhTjjIWo3pfZrXlhq5Xbcl_eCfnleDo02FLLxcTDanipRhL8S8IYeVfyq9-W598wtArbkZVYH58J5iupbwbDsqURA5_L8Eip1IXwYdbR9gZgAtvR_sZy1vGEZx5p-QMUq9y6_fnnANk_SHS"/>
+</div>
+<span class="font-display-md text-headline-lg-mobile font-extrabold text-primary tracking-tighter">DuoFit</span>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95 transition-transform" data-icon="notifications">notifications</button>
+</div>
+</header>
+<main class="pt-20 px-margin_mobile max-w-lg mx-auto">
+<!-- Banner Informativo -->
+<div class="mt-4 mb-6 p-4 rounded-xl glass-card flex items-center gap-3 animate-pulse border-l-4 border-primary-fixed-dim">
+<span class="material-symbols-outlined text-primary-fixed-dim" data-icon="info">info</span>
+<p class="font-label-md text-label-md text-primary">Si apruebas, Aaron mantendrá su racha</p>
+</div>
+<!-- Main Review Card -->
+<div class="glass-card rounded-2xl overflow-hidden mb-6">
+<div class="p-4 border-b border-outline-variant/10">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Aaron completó: Cuerpo completo A</h2>
+<div class="flex gap-4 mt-2">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-on-surface-variant" data-icon="calendar_today">calendar_today</span>
+<span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Hoy</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-on-surface-variant" data-icon="schedule">schedule</span>
+<span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">18:30</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-on-surface-variant" data-icon="timer">timer</span>
+<span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">28 min</span>
+</div>
+</div>
+</div>
+<!-- Evidence Photo -->
+<div class="relative w-full aspect-video">
+<img class="w-full h-full object-cover" data-alt="A first-person perspective photo of a sweaty male athlete finishing a workout. He is standing in a modern, dark-themed gym with neon light accents. In the background, heavy dumbbells and a weight bench are visible. The image is high-contrast with a cool blue and violet color grade, evoking a sense of intense physical achievement and elite sports performance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBy6grTliU3u6LIUqxcAm0i-JQ-EKgcr62sYzncXjeNfRVD0jIdUIHUYbRnpslmrP5dL2USvaOG50U-T61izJliry6XyujtUIZ9AyU15k2r7vtEzyAN-scXP-_2PRkqY88hDYUM9XMCWiKM9algMhnQzQsjrDLHLOAxI-KddwbriMbn_PbN0z9K7UBT-igS0qJ8iUFEmKXmVCrNHzHQE6-NQwQtO5d0PReG9EciJ6A9XxLa4x0YTOpl"/>
+<div class="absolute bottom-4 left-4 right-4 p-3 bg-black/60 backdrop-blur-md rounded-lg border border-white/10">
+<div class="flex gap-2 items-start">
+<span class="material-symbols-outlined text-tertiary-fixed-dim fill-icon text-sm" data-icon="chat_bubble" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+<p class="text-sm text-on-surface italic">"¡Costó pero salió!"</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Section -->
+<div class="space-y-4 mb-8">
+<button class="w-full h-14 rounded-xl approve-gradient text-on-surface font-bold text-label-md flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-green-900/20" id="approveBtn">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+                APROBAR
+            </button>
+<button class="w-full h-14 rounded-xl reject-gradient text-on-surface font-bold text-label-md flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-red-900/20" id="rejectBtn">
+<span class="material-symbols-outlined" data-icon="cancel">cancel</span>
+                RECHAZAR
+            </button>
+<!-- Reject Reason Field (Hidden by default) -->
+<div class="hidden animate-in slide-in-from-top duration-300" id="rejectReasonSection">
+<label class="block text-label-md text-on-surface-variant mb-2 px-1" for="reason">Motivo de rechazo</label>
+<textarea class="w-full bg-surface-container border border-outline-variant rounded-xl p-3 text-on-surface focus:ring-2 focus:ring-error focus:border-transparent transition-all outline-none placeholder:text-outline-variant" id="reason" placeholder="Escribe aquí por qué no apruebas esta prueba..." rows="3"></textarea>
+<button class="w-full mt-4 h-12 border-2 border-error text-error font-bold rounded-xl active:scale-95 transition-all">
+                    ENVIAR RECHAZO
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface-container rounded-t-xl border-t border-outline-variant/20 shadow-[0_-4px_10px_rgba(0,0,0,0.3)]">
+<div class="flex justify-around items-center w-full h-20 pb-safe px-2">
+<div class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-bright transition-colors active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md text-label-md">Inicio</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-bright transition-colors active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="fitness_center">fitness_center</span>
+<span class="font-label-md text-label-md">Rutina</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-bright transition-colors active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="swords">swords</span>
+<span class="font-label-md text-label-md">Duelo</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined fill-icon" data-icon="assignment" style="font-variation-settings: 'FILL' 1;">assignment</span>
+<span class="font-label-md text-label-md">Pruebas</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-bright transition-colors active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md">Perfil</span>
+</div>
+</div>
+</nav>
+<script>
+        const rejectBtn = document.getElementById('rejectBtn');
+        const rejectReasonSection = document.getElementById('rejectReasonSection');
+        const approveBtn = document.getElementById('approveBtn');
+
+        rejectBtn.addEventListener('click', () => {
+            rejectReasonSection.classList.toggle('hidden');
+            if(!rejectReasonSection.classList.contains('hidden')) {
+                rejectReasonSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+
+        approveBtn.addEventListener('click', () => {
+            // Visual feedback for approval
+            approveBtn.innerHTML = '<span class="material-symbols-outlined animate-bounce">check_circle</span> APROBADO';
+            approveBtn.classList.add('opacity-50', 'pointer-events-none');
+            rejectBtn.classList.add('hidden');
+            rejectReasonSection.classList.add('hidden');
+            
+            // Simple micro-interaction: update the banner
+            const banner = document.querySelector('.glass-card p');
+            banner.innerHTML = '¡Prueba aprobada! Racha de Aaron protegida.';
+            banner.parentElement.classList.replace('border-primary-fixed-dim', 'border-green-500');
+        });
+    </script>
+</body></html>
