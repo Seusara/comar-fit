@@ -26,34 +26,119 @@ export const ROUTINE_CATALOG = [
 // Map exercise names to their form reference data for technique videos and tips
 const EXERCISE_REFERENCES = {
   'Flexiones': {
-    formReferenceUrl: 'https://www.youtube.com/embed/hQmXH-Mv9S8?start=0&end=60',
+    formReferenceUrl: 'https://www.youtube.com/embed/5HL5WY0WVJQ',
     formReferenceType: 'youtube',
     tips: ['Codos a 45 grados', 'Core apretado', 'Rango completo de movimiento']
   },
   'Sentadillas': {
-    formReferenceUrl: 'https://www.youtube.com/embed/Soa3qhHJO6s?start=0&end=60',
+    formReferenceUrl: 'https://www.youtube.com/embed/qsAkuNORgmk',
     formReferenceType: 'youtube',
     tips: ['Rodillas alineadas con tobillos', 'Pecho arriba', 'Profundidad completa']
   },
+  'Abdominales': {
+    formReferenceUrl: 'https://www.youtube.com/embed/jSv7X4YHT3w',
+    formReferenceType: 'youtube',
+    tips: ['Baja lento y controlado', 'No jales el cuello', 'Exhala al subir']
+  },
   'Burpees': {
-    formReferenceUrl: 'https://www.youtube.com/embed/JZQA7VJpgmI?start=0&end=60',
+    formReferenceUrl: 'https://www.youtube.com/embed/IYusabTdFEo',
     formReferenceType: 'youtube',
     tips: ['Posición de plancha controlada', 'Salto explosivo', 'Cuerpo completo']
   },
   'Escaladores': {
-    formReferenceUrl: 'https://www.youtube.com/embed/nmwgirgXLYM?start=0&end=60',
+    formReferenceUrl: 'https://www.youtube.com/embed/FPLXxBxYcmE',
     formReferenceType: 'youtube',
     tips: ['Movimiento rápido controlado', 'Caderas alineadas', 'Core activado']
   },
+  'Fondos de tríceps': {
+    formReferenceUrl: 'https://www.youtube.com/embed/bR9d6yRH3iA',
+    formReferenceType: 'youtube',
+    tips: ['Codos hacia atrás', 'Baja controlado', 'No bloquees los codos arriba']
+  },
+  'Sentadillas con pistola': {
+    formReferenceUrl: 'https://www.youtube.com/embed/XZR_jZ6L67U',
+    formReferenceType: 'youtube',
+    tips: ['Balance en una pierna', 'Baja lento', 'Usa apoyo si es necesario']
+  },
+  'Lagartijas con palmadas': {
+    formReferenceUrl: 'https://www.youtube.com/embed/TfEDoyuEmuc',
+    formReferenceType: 'youtube',
+    tips: ['Explosividad controlada', 'Aterriza suave', 'Mantén el core firme']
+  },
+  'Sentadillas búlgaras': {
+    formReferenceUrl: 'https://www.youtube.com/embed/6d6HlPWgAUs',
+    formReferenceType: 'youtube',
+    tips: ['Pie trasero elevado', 'Rodilla delantera alineada', 'Baja controlado']
+  },
   'Plancha': {
-    formReferenceUrl: 'https://www.youtube.com/embed/pSHjTRCQxIw?start=0&end=60',
+    formReferenceUrl: 'https://www.youtube.com/embed/AD1YG9b88bk',
     formReferenceType: 'youtube',
     tips: ['Columna neutra', 'Hombros sobre muñecas', 'Core contraído']
   },
+  'Planchas laterales': {
+    formReferenceUrl: 'https://www.youtube.com/embed/zfiOU4yxLKo',
+    formReferenceType: 'youtube',
+    tips: ['Cadera alineada', 'Hombro sobre codo', 'No dejes caer la cadera']
+  },
+  'Marcha activa': {
+    formReferenceUrl: 'https://www.youtube.com/embed/jzA7WzdW524',
+    formReferenceType: 'youtube',
+    tips: ['Rodillas altas', 'Ritmo constante', 'Brazos activos']
+  },
+  'Círculos de brazos': {
+    formReferenceUrl: 'https://www.youtube.com/embed/YTueIW_xapc',
+    formReferenceType: 'youtube',
+    tips: ['Movimiento amplio y controlado', 'Ambas direcciones', 'Hombros relajados']
+  },
+  'Movilidad de cadera': {
+    formReferenceUrl: 'https://www.youtube.com/embed/v-M4sixNiio',
+    formReferenceType: 'youtube',
+    tips: ['Movimiento lento y controlado', 'Rango completo', 'Respira profundo']
+  },
+  'Saltos de tijera': {
+    formReferenceUrl: 'https://www.youtube.com/embed/CcSADh4EbXc',
+    formReferenceType: 'youtube',
+    tips: ['Aterriza suave', 'Brazos y piernas sincronizados', 'Ritmo constante']
+  },
   'Puente de glúteo': {
-    formReferenceUrl: 'https://www.youtube.com/embed/wPM8icPu4WM?start=0&end=60',
+    formReferenceUrl: 'https://www.youtube.com/embed/Y572Gf2v4ZI',
     formReferenceType: 'youtube',
     tips: ['Glúteos en la parte superior', 'Extensión de cadera completa', 'Aprieta al pico']
+  },
+  'Remo con mochila': {
+    formReferenceUrl: 'https://www.youtube.com/embed/3glCe1wl4_w',
+    formReferenceType: 'youtube',
+    tips: ['Espalda recta', 'Jala con codos', 'Aprieta omóplatos']
+  },
+  'Peso muerto con mochila': {
+    formReferenceUrl: 'https://www.youtube.com/embed/eEFw05wsO9s',
+    formReferenceType: 'youtube',
+    tips: ['Espalda neutra', 'Cadera hacia atrás', 'Peso cerca del cuerpo']
+  },
+  'Remo con banda': {
+    formReferenceUrl: 'https://www.youtube.com/embed/zqRiAFTcjCc',
+    formReferenceType: 'youtube',
+    tips: ['Postura estable', 'Jala hacia el abdomen', 'Controla el regreso']
+  },
+  'Press con mancuernas': {
+    formReferenceUrl: 'https://www.youtube.com/embed/97gthxw02QY',
+    formReferenceType: 'youtube',
+    tips: ['Muñecas firmes', 'Empuja recto hacia arriba', 'Controla la bajada']
+  },
+  'Estiramiento general': {
+    formReferenceUrl: 'https://www.youtube.com/embed/pDQ8M4T62NE',
+    formReferenceType: 'youtube',
+    tips: ['Sin rebotes', 'Respira profundo', 'Mantén cada postura 20-30s']
+  },
+  'Respiración controlada': {
+    formReferenceUrl: 'https://www.youtube.com/embed/TuPaMCsnxes',
+    formReferenceType: 'youtube',
+    tips: ['Inhala por la nariz', 'Exhala lento por la boca', 'Relaja los hombros']
+  },
+  'Estiramiento de piernas': {
+    formReferenceUrl: 'https://www.youtube.com/embed/txsha7BIlDo',
+    formReferenceType: 'youtube',
+    tips: ['Sin rebotes', 'Mantén la postura', 'Respira y relaja']
   },
 };
 
