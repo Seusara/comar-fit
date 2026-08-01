@@ -9,7 +9,7 @@ import { useActiveDuel } from '../hooks/useActiveDuel';
 import { useWorkouts } from '../hooks/useWorkouts';
 import { updateUserProfile, updatePhysicalProfile } from '../firebase/firestore';
 import { logoutUser } from '../firebase/auth';
-import { uploadProfilePhoto } from '../firebase/storage';
+import { uploadProfilePhoto } from '../cloudinary/uploadProfilePhoto';
 import { processProfileImage, validateProfileImage } from '../profile/profileImage';
 
 vi.mock('../contexts/AuthContext');
@@ -18,7 +18,7 @@ vi.mock('../hooks/useActiveDuel');
 vi.mock('../hooks/useWorkouts');
 vi.mock('../firebase/firestore');
 vi.mock('../firebase/auth');
-vi.mock('../firebase/storage');
+vi.mock('../cloudinary/uploadProfilePhoto');
 vi.mock('../profile/profileImage');
 
 const profile = {
@@ -47,7 +47,7 @@ describe('Perfil', () => {
     logoutUser.mockResolvedValue(undefined);
     validateProfileImage.mockReturnValue(null);
     processProfileImage.mockResolvedValue(new Blob(['webp'], { type: 'image/webp' }));
-    uploadProfilePhoto.mockResolvedValue('https://storage/avatar.webp');
+    uploadProfilePhoto.mockResolvedValue('https://res.cloudinary.com/dlwlv6iyab/image/upload/avatar.webp');
   });
 
   it('renders real identity and personal statistics', () => {
@@ -128,8 +128,17 @@ describe('Perfil', () => {
     await user.click(screen.getByRole('button', { name: 'Guardar foto' }));
     await waitFor(() => expect(processProfileImage).toHaveBeenCalledWith(file));
     expect(uploadProfilePhoto).toHaveBeenCalledWith('aaron', expect.any(Blob), expect.any(Function));
-    expect(updateUserProfile).toHaveBeenCalledWith('aaron', { avatarUrl: 'https://storage/avatar.webp' });
+    expect(updateUserProfile).toHaveBeenCalledWith('aaron', { avatarUrl: 'https://res.cloudinary.com/dlwlv6iyab/image/upload/avatar.webp' });
     expect(await screen.findByRole('status')).toHaveTextContent('Foto de perfil actualizada');
     expect(refresh).toHaveBeenCalled();
+  });
+
+  it('explains when Cloudinary public configuration is missing', async () => {
+    uploadProfilePhoto.mockRejectedValue(new Error('CLOUDINARY_CONFIG_MISSING'));
+    const user = userEvent.setup();
+    renderProfile();
+    await user.upload(screen.getByLabelText('Seleccionar foto de perfil'), new File(['x'], 'avatar.png', { type: 'image/png' }));
+    await user.click(screen.getByRole('button', { name: 'Guardar foto' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/no está configurada/i);
   });
 });

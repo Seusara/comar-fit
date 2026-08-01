@@ -13,7 +13,7 @@ import { deriveParticipantActivity } from '../duel/activeDays';
 import { updatePhysicalProfile, updateUserProfile } from '../firebase/firestore';
 import { canUpdatePhysicalProfile, nextPhysicalProfileUpdateAt } from '../firebase/profilePolicy';
 import { logoutUser } from '../firebase/auth';
-import { uploadProfilePhoto } from '../firebase/storage';
+import { uploadProfilePhoto } from '../cloudinary/uploadProfilePhoto';
 import { processProfileImage, validateProfileImage } from '../profile/profileImage';
 
 const EMPTY_FORM = {
@@ -168,9 +168,11 @@ function Perfil() {
       setMessage('Foto de perfil actualizada');
       refresh();
     } catch (error) {
-      setSaveError(error?.message === 'PROFILE_PHOTO_UPLOAD_TIMEOUT'
-        ? 'Firebase Storage aún no está habilitado. Actívalo en Firebase para subir fotos.'
-        : 'No pudimos actualizar la foto. Intenta nuevamente.');
+      setSaveError(error?.message === 'CLOUDINARY_CONFIG_MISSING'
+        ? 'La subida de fotos no está configurada. Contacta al administrador.'
+        : error?.message === 'PROFILE_PHOTO_UPLOAD_TIMEOUT'
+          ? 'La subida tardó demasiado. Revisa tu conexión e intenta nuevamente.'
+          : 'No pudimos actualizar la foto. Intenta nuevamente.');
     } finally { setPhotoSaving(false); }
   }
 

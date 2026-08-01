@@ -8,7 +8,7 @@ needed to deploy Comar-Fit somewhere Comar and Alexandra can actually use it.
 
 1. Go to the Firebase console and create a new project (e.g. `comar-fit`).
 2. In the project, add a Web App (</> icon) and copy the resulting config
-   values (`apiKey`, `authDomain`, `projectId`, `storageBucket`, `appId`).
+   values (`apiKey`, `authDomain`, `projectId`, `appId`).
 3. Enable **Authentication → Sign-in method → Email/Password**.
 4. Enable **Firestore Database** (production mode — `app/firestore.rules`
    already defines the access rules).
@@ -39,9 +39,14 @@ step 1:
 VITE_FIREBASE_API_KEY=...
 VITE_FIREBASE_AUTH_DOMAIN=...
 VITE_FIREBASE_PROJECT_ID=...
-VITE_FIREBASE_STORAGE_BUCKET=...
 VITE_FIREBASE_APP_ID=...
+VITE_CLOUDINARY_CLOUD_NAME=...
+VITE_CLOUDINARY_UPLOAD_PRESET=...
 ```
+
+The Cloudinary values are public client configuration for the hardened
+unsigned profile-photo preset. Never add a Cloudinary API secret to a
+`VITE_*` variable or to the repository.
 
 `app/src/firebase/config.js` only connects to the emulators when
 `import.meta.env.DEV` or the test runner is active, so a production build
