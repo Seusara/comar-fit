@@ -117,12 +117,13 @@ describe('firestore.rules', () => {
 
   it('allows an atomic physical update after 30 days and keeps scoring profile in sync', async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'users', 'alice-uid'), {
+      const adminDb = ctx.firestore();
+      await setDoc(doc(adminDb, 'users', 'alice-uid'), {
         uid: 'alice-uid', email: 'alice@example.com', displayName: 'Alice',
         gender: 'F', weight: 60,
         physicalProfileUpdatedAt: Timestamp.fromDate(new Date(Date.now() - 31 * 24 * 60 * 60 * 1000)),
       });
-      await setDoc(doc(ctx.firestore(), 'scoringProfiles', 'alice-uid'), { gender: 'F', weight: 60 });
+      await setDoc(doc(adminDb, 'scoringProfiles', 'alice-uid'), { gender: 'F', weight: 60 });
     });
 
     const alice = testEnv.authenticatedContext('alice-uid');
@@ -143,12 +144,13 @@ describe('firestore.rules', () => {
     ['unchanged physical data', { gender: 'F', weight: 60 }],
   ])('rejects %s even when the monthly window is open', async (_case, physical) => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'users', 'alice-uid'), {
+      const adminDb = ctx.firestore();
+      await setDoc(doc(adminDb, 'users', 'alice-uid'), {
         uid: 'alice-uid', email: 'alice@example.com', displayName: 'Alice',
         gender: 'F', weight: 60,
         physicalProfileUpdatedAt: Timestamp.fromDate(new Date(Date.now() - 31 * 24 * 60 * 60 * 1000)),
       });
-      await setDoc(doc(ctx.firestore(), 'scoringProfiles', 'alice-uid'), { gender: 'F', weight: 60 });
+      await setDoc(doc(adminDb, 'scoringProfiles', 'alice-uid'), { gender: 'F', weight: 60 });
     });
 
     const alice = testEnv.authenticatedContext('alice-uid');
