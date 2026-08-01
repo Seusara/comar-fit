@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, afterAll, afterEach, describe, it } from 'vitest';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, setDoc, getDoc, updateDoc, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc, getDoc, updateDoc, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 let testEnv;
 
@@ -224,6 +224,69 @@ describe('firestore.rules', () => {
     const carol = testEnv.authenticatedContext('carol-uid');
     const ref = doc(carol.firestore(), 'duels', 'duel-1');
     await assertFails(getDoc(ref));
+  });
+
+  it('lets either duel participant read both participants workouts', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'duels', 'duel-activity'), {
+        userA_uid: 'alice-uid', userB_uid: 'bob-uid', status: 'active',
+      });
+      await setDoc(doc(db, 'duels', 'duel-activity', 'workouts', 'alice-workout'), {
+        userId: 'alice-uid', duelId: 'duel-activity', exercises: [],
+        performedAt: Timestamp.now(), createdAt: Timestamp.now(), updatedAt: Timestamp.now(), revision: 0,
+      });
+      await setDoc(doc(db, 'duels', 'duel-activity', 'workouts', 'bob-workout'), {
+        userId: 'bob-uid', duelId: 'duel-activity', exercises: [],
+        performedAt: Timestamp.now(), createdAt: Timestamp.now(), updatedAt: Timestamp.now(), revision: 0,
+      });
+    });
+
+    const alice = testEnv.authenticatedContext('alice-uid');
+    const snapshot = await assertSucceeds(getDocs(collection(alice.firestore(), 'duels', 'duel-activity', 'workouts')));
+    expect(snapshot.size).toBe(2);
+  });
+
+  it('allows only the owner to edit before createdAt plus ten minutes', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'duels', 'duel-edit'), {
+        userA_uid: 'alice-uid', userB_uid: 'bob-uid', status: 'active',
+      });
+      await setDoc(doc(db, 'duels', 'duel-edit', 'workouts', 'recent'), {
+        userId: 'alice-uid', duelId: 'duel-edit', exercises: [{ name: 'Flexiones' }],
+        performedAt: Timestamp.now(),
+        createdAt: Timestamp.fromMillis(Date.now() - 5 * 60 * 1000),
+        updatedAt: Timestamp.now(), revision: 0,
+      });
+    });
+
+    const alice = testEnv.authenticatedContext('alice-uid');
+    const bob = testEnv.authenticatedContext('bob-uid');
+    const path = ['duels', 'duel-edit', 'workouts', 'recent'];
+    const patch = { exercises: [{ name: 'Sentadillas' }], updatedAt: serverTimestamp(), revision: 1 };
+    await assertSucceeds(updateDoc(doc(alice.firestore(), ...path), patch));
+    await assertFails(updateDoc(doc(bob.firestore(), ...path), patch));
+  });
+
+  it('rejects owner edits after createdAt plus ten minutes', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'duels', 'duel-expired'), {
+        userA_uid: 'alice-uid', userB_uid: 'bob-uid', status: 'active',
+      });
+      await setDoc(doc(db, 'duels', 'duel-expired', 'workouts', 'expired'), {
+        userId: 'alice-uid', duelId: 'duel-expired', exercises: [{ name: 'Flexiones' }],
+        performedAt: Timestamp.now(),
+        createdAt: Timestamp.fromMillis(Date.now() - 11 * 60 * 1000),
+        updatedAt: Timestamp.now(), revision: 0,
+      });
+    });
+
+    const alice = testEnv.authenticatedContext('alice-uid');
+    await assertFails(updateDoc(doc(alice.firestore(), 'duels', 'duel-expired', 'workouts', 'expired'), {
+      exercises: [{ name: 'Sentadillas' }], updatedAt: serverTimestamp(), revision: 1,
+    }));
   });
 
   it('lets a user create a duel where they are userA_uid', async () => {

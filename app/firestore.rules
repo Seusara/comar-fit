@@ -144,9 +144,9 @@ service cloud.firestore {
       allow update, delete: if false;
 
       match /workouts/{workoutId} {
-        // Read: owner or duel participant
-        allow read: if isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data) &&
-          resource.data.userId == request.auth.uid;
+        allow read: if isDuelParticipant(
+          get(/databases/$(database)/documents/duels/$(duelId)).data
+        );
         
         allow create: if isOwner(request.resource.data.userId) &&
           isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data) &&
@@ -168,13 +168,14 @@ service cloud.firestore {
           request.resource.data.duelId == resource.data.duelId &&
           request.resource.data.performedAt == resource.data.performedAt &&
           request.resource.data.createdAt == resource.data.createdAt &&
+          request.resource.data.updatedAt == request.time &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'exercises', 'updatedAt', 'revision'
           ]) &&
-          request.time < resource.data.editableUntil;
+          request.time < resource.data.createdAt + duration.value(10, 'm');
         
         allow delete: if isOwner(resource.data.userId) &&
-          request.time < resource.data.editableUntil;
+          request.time < resource.data.createdAt + duration.value(10, 'm');
       }
 
       match /weeks/{weekId} {
