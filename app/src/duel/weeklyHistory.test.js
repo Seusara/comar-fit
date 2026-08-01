@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { deriveWeeklyDuelHistory, weekStartKey } from './weeklyHistory';
+import {
+  deriveWeeklyDuelHistory,
+  endOfMexicoCityDay,
+  weekDayNumber,
+  weekStartKey,
+} from './weeklyHistory';
 
 const duel = {
   userA_uid: 'aaron',
@@ -15,6 +20,18 @@ describe('weekStartKey', () => {
 
   it('returns null for invalid dates', () => {
     expect(weekStartKey('invalid')).toBeNull();
+  });
+});
+
+describe('current Mexico City duel day', () => {
+  it('numbers Monday through Sunday from 1 to 7', () => {
+    expect(weekDayNumber(new Date('2026-08-03T06:30:00Z'))).toBe(1);
+    expect(weekDayNumber(new Date('2026-08-10T05:30:00Z'))).toBe(7);
+  });
+
+  it('returns the next Mexico City midnight', () => {
+    expect(endOfMexicoCityDay(new Date('2026-08-03T18:00:00Z')).toISOString())
+      .toBe('2026-08-04T06:00:00.000Z');
   });
 });
 

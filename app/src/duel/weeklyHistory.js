@@ -1,9 +1,44 @@
 import { formatDayKey, resolvePerformedAt, toDate } from '../utils/dates';
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const MEXICO_CITY = 'America/Mexico_City';
+
 function shiftKey(key, days) {
   const [year, month, day] = key.split('-').map(Number);
   const value = new Date(Date.UTC(year, month - 1, day + days, 12));
   return value.toISOString().slice(0, 10);
+}
+
+function mexicoCityOffsetMs(value) {
+  const date = toDate(value);
+  if (!date) return 0;
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: MEXICO_CITY,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map(({ type, value: part }) => [type, part]));
+  const localAsUtc = Date.UTC(
+    Number(values.year),
+    Number(values.month) - 1,
+    Number(values.day),
+    Number(values.hour),
+    Number(values.minute),
+    Number(values.second),
+  );
+  return localAsUtc - Math.floor(date.getTime() / 1000) * 1000;
+}
+
+function mexicoCityMidnight(dayKey) {
+  const nominalUtc = new Date(`${dayKey}T00:00:00.000Z`);
+  let result = new Date(nominalUtc.getTime() - mexicoCityOffsetMs(nominalUtc));
+  result = new Date(nominalUtc.getTime() - mexicoCityOffsetMs(result));
+  return result;
 }
 
 export function weekStartKey(value) {
@@ -14,12 +49,38 @@ export function weekStartKey(value) {
   return shiftKey(dayKey, -daysSinceMonday);
 }
 
-function participant(uid, dayKeys) {
+export function weekDayNumber(value = new Date()) {
+  const dayKey = formatDayKey(value);
+  const startKey = weekStartKey(value);
+  if (!dayKey || !startKey) return 1;
+  const elapsed = Date.parse(`${dayKey}T12:00:00.000Z`) - Date.parse(`${startKey}T12:00:00.000Z`);
+  return Math.min(7, Math.max(1, Math.round(elapsed / DAY_MS) + 1));
+}
+
+export function endOfMexicoCityDay(value = new Date()) {
+  const dayKey = formatDayKey(value);
+  if (!dayKey) return null;
+  return mexicoCityMidnight(shiftKey(dayKey, 1));
+}
+
+function streakFor(dayKeys, referenceKey) {
+  const keys = new Set(dayKeys);
+  let cursor = keys.has(referenceKey) ? referenceKey : shiftKey(referenceKey, -1);
+  let streak = 0;
+  while (keys.has(cursor)) {
+    streak += 1;
+    cursor = shiftKey(cursor, -1);
+  }
+  return streak;
+}
+
+function participant(uid, dayKeys, referenceKey) {
   const unique = [...new Set(dayKeys)].sort();
   return {
     uid,
     activeDays: unique.length,
     percentage: Math.round((unique.length / 7) * 100),
+    streak: streakFor(unique, referenceKey),
     dayKeys: unique,
   };
 }
@@ -29,13 +90,15 @@ function resultFor(participantA, participantB) {
   return participantA.activeDays > participantB.activeDays ? 'participantA' : 'participantB';
 }
 
-function createWeek(weekId, uidA, uidB, groupedDays) {
-  const participantA = participant(uidA, groupedDays.get(weekId)?.get(uidA) ?? []);
-  const participantB = participant(uidB, groupedDays.get(weekId)?.get(uidB) ?? []);
+function createWeek(weekId, uidA, uidB, groupedDays, currentDayKey) {
+  const endKey = shiftKey(weekId, 6);
+  const referenceKey = currentDayKey >= weekId && currentDayKey <= endKey ? currentDayKey : endKey;
+  const participantA = participant(uidA, groupedDays.get(weekId)?.get(uidA) ?? [], referenceKey);
+  const participantB = participant(uidB, groupedDays.get(weekId)?.get(uidB) ?? [], referenceKey);
   return {
     weekId,
     startKey: weekId,
-    endKey: shiftKey(weekId, 6),
+    endKey,
     participantA,
     participantB,
     result: resultFor(participantA, participantB),
@@ -46,6 +109,7 @@ export function deriveWeeklyDuelHistory(workouts = [], duel, now = new Date()) {
   const uidA = duel?.userA_uid;
   const uidB = duel?.userB_uid;
   const currentWeekId = weekStartKey(now);
+  const currentDayKey = formatDayKey(now);
   const groupedDays = new Map();
   const validWorkoutDates = [];
 
@@ -70,10 +134,11 @@ export function deriveWeeklyDuelHistory(workouts = [], duel, now = new Date()) {
 
   const weeks = [];
   for (let weekId = firstWeekId; weekId <= currentWeekId; weekId = shiftKey(weekId, 7)) {
-    weeks.push(createWeek(weekId, uidA, uidB, groupedDays));
+    weeks.push(createWeek(weekId, uidA, uidB, groupedDays, currentDayKey));
   }
 
-  const currentWeek = weeks[weeks.length - 1] ?? createWeek(currentWeekId, uidA, uidB, groupedDays);
+  const currentWeek = weeks[weeks.length - 1]
+    ?? createWeek(currentWeekId, uidA, uidB, groupedDays, currentDayKey);
   return {
     currentWeek,
     completedWeeks: weeks.slice(0, -1).reverse(),
