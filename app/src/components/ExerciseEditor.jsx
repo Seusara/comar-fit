@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Select from './Select';
 import Input from './Input';
 import Button from './Button';
-import { ROUTINE_CATALOG } from '../routines/catalog';
+import { ROUTINE_CATALOG, findExerciseReference } from '../routines/catalog';
+import FormReferenceModal from './FormReferenceModal.jsx';
 
 /**
  * Local exercise catalog (Task 5's `src/domain/exercises.js` isn't built in
@@ -72,12 +73,28 @@ export const MAX_REPS = 500;
 export const MIN_TOTAL_DURATION_MINUTES = 1;
 export const MAX_TOTAL_DURATION_MINUTES = 300;
 
+// Module-level (not per-render/per-row) so the options array/objects aren't
+// recreated on every keystroke across every row.
+const DIFFICULTY_OPTIONS = [
+  { value: 'hard', label: 'Difícil', emoji: '😰' },
+  { value: 'moderate', label: 'Regular', emoji: '😐' },
+  { value: 'easy', label: 'Fácil', emoji: '💪' },
+];
+
 export function createEmptyExercise() {
   const name = EXERCISE_CATALOG[0];
   // PROVISIONAL exerciseId — display name used as the join key. See the big
   // note on EXERCISE_CATALOG above; must be reconciled with the backend's
   // exercise catalog (functions/src/scoring.js) before integration.
-  return { exerciseId: name, name, sets: 1, reps: 1, durationMinutes: 1 };
+  return {
+    exerciseId: name,
+    name,
+    sets: 1,
+    reps: 1,
+    durationMinutes: 1,
+    difficulty_feedback: null,
+    feedback_timestamp: null,
+  };
 }
 
 /**
@@ -142,6 +159,12 @@ export function validateExercises(exercises) {
  */
 function ExerciseEditor({ exercises = [], onChange, onValidityChange, disabled = false }) {
   const validation = useMemo(() => validateExercises(exercises), [exercises]);
+  const [openReferenceRowIndex, setOpenReferenceRowIndex] = useState(null);
+
+  // Stable identity so FormReferenceModal's focus-trap effect (which lists
+  // onClose in its dependency array) doesn't tear down and re-run on every
+  // parent re-render while the modal is open.
+  const closeReferenceModal = useCallback(() => setOpenReferenceRowIndex(null), []);
 
   useEffect(() => {
     onValidityChange?.(validation.isValid);
@@ -167,6 +190,7 @@ function ExerciseEditor({ exercises = [], onChange, onValidityChange, disabled =
     <div className="space-y-4">
       {exercises.map((exercise, index) => {
         const errors = validation.rowErrors[index] || {};
+        const reference = findExerciseReference(exercise.name);
         return (
           // Index key: rows are only appended/removed (never reordered) and
           // every field is fully controlled, so index-based identity is safe.
@@ -241,6 +265,58 @@ function ExerciseEditor({ exercises = [], onChange, onValidityChange, disabled =
                 }
               />
             </div>
+
+            {reference && (
+              <button
+                type="button"
+                onClick={() => setOpenReferenceRowIndex(index)}
+                disabled={disabled}
+                aria-label={`Ver técnica de ${exercise.name} (ejercicio ${index + 1})`}
+                className="mt-2 min-h-[44px] rounded-lg px-3 text-sm text-primary-fixed-dim underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Ver técnica
+              </button>
+            )}
+
+            <div
+              className="mt-2 flex gap-2"
+              role="group"
+              aria-label={`¿Qué tan difícil fue ${exercise.name} (ejercicio ${index + 1})?`}
+            >
+              {DIFFICULTY_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  disabled={disabled}
+                  aria-pressed={exercise.difficulty_feedback === option.value}
+                  onClick={() =>
+                    updateRow(index, {
+                      difficulty_feedback: option.value,
+                      feedback_timestamp: new Date().toISOString(),
+                    })
+                  }
+                  className={`min-h-[44px] flex-1 rounded-lg border px-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim disabled:opacity-50 disabled:cursor-not-allowed ${
+                    exercise.difficulty_feedback === option.value
+                      ? 'border-primary-fixed-dim bg-primary-fixed-dim/10 text-on-surface'
+                      : 'border-outline-variant/30 text-on-surface-variant'
+                  }`}
+                >
+                  {option.emoji} {option.label}
+                </button>
+              ))}
+            </div>
+
+            {reference && openReferenceRowIndex === index && (
+              // Mounted only for the row whose modal is actually open (not one
+              // idle instance per catalog-matched row) so adding many rows
+              // doesn't multiply mounted modals/effect subscriptions.
+              <FormReferenceModal
+                isOpen
+                exerciseName={exercise.name}
+                reference={reference}
+                onClose={closeReferenceModal}
+              />
+            )}
           </div>
         );
       })}

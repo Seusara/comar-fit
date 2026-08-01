@@ -307,6 +307,14 @@ describe('SubirPrueba', () => {
     expect(exercises[0].sets).toBe(4);
     expect(createWorkout).not.toHaveBeenCalled();
 
+    // This workout was written before difficulty_feedback/feedback_timestamp
+    // existed (see the stubbed `exercises` above: neither key is present at
+    // all, not even `null`), so hydrating it for edit must default both to
+    // `null` rather than leaving them missing when it's resaved — same bug
+    // class as the routinePayload.js fix for the daily-routine prefill path.
+    expect(exercises[0].difficulty_feedback).toBeNull();
+    expect(exercises[0].feedback_timestamp).toBeNull();
+
     // This workout was already `status: 'scored'` before the edit (no
     // revision/scoredAt/sessionScore to compare against in this stub data),
     // so the toast must not fire just because the status still reads
@@ -473,5 +481,29 @@ describe('SubirPrueba', () => {
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /guardar entrenamiento/i })).not.toBeInTheDocument();
+  });
+
+  it('includes the técnica button and submits a difficulty rating with the exercise', async () => {
+    const user = userEvent.setup();
+    renderSubirPrueba();
+    await flushProfileFetch();
+
+    // The default row's exercise ('Flexiones') already has a catalog match,
+    // so the "Ver técnica" button is present without changing the selection.
+    await user.click(screen.getByRole('button', { name: /ver técnica/i }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /cerrar/i }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /fácil/i }));
+
+    await user.click(submitButton());
+
+    await waitFor(() => {
+      expect(createWorkout).toHaveBeenCalled();
+    });
+    const [, , submittedExercises] = createWorkout.mock.calls[0];
+    expect(submittedExercises[0].difficulty_feedback).toBe('easy');
+    expect(typeof submittedExercises[0].feedback_timestamp).toBe('string');
   });
 });

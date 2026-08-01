@@ -9,7 +9,17 @@ test('converts a valid daily routine payload to editor exercises', () => {
   });
   assert.deepEqual(result, [{
     exerciseId: 'Flexiones', name: 'Flexiones', sets: 3, reps: 10, durationMinutes: 5,
+    difficulty_feedback: null, feedback_timestamp: null,
   }]);
+});
+
+test('seeds difficulty_feedback and feedback_timestamp as null, matching createEmptyExercise()', () => {
+  const result = routineExercisesFromLocationState({
+    source: 'daily-routine',
+    exercises: [{ name: 'Flexiones', sets: 3, reps: 10, duration: 5 }],
+  });
+  assert.equal(result[0].difficulty_feedback, null);
+  assert.equal(result[0].feedback_timestamp, null);
 });
 
 test('rejects payloads from unknown sources', () => {

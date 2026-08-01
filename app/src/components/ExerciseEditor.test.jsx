@@ -65,15 +65,23 @@ describe('ExerciseEditor (controlled)', () => {
     const user = userEvent.setup();
     render(<Harness initial={[createEmptyExercise()]} />);
 
-    await user.click(screen.getByRole('button', { name: /añadir ejercicio/i }));
+    // Query once and reuse: this button is rendered a single time (outside
+    // the per-row map), so React keeps the same DOM node across re-renders —
+    // re-querying by role+name on every loop iteration was recomputing
+    // accessible names for every button now in the DOM (each row adds 4 with
+    // Task 3's "Ver técnica" + difficulty buttons), which is what actually
+    // made this test slow, not React/userEvent itself.
+    const addButton = screen.getByRole('button', { name: /añadir ejercicio/i });
+
+    await user.click(addButton);
     expect(screen.getAllByLabelText('Ejercicio')).toHaveLength(2);
 
     // Fill up to the cap and confirm the add button disables at the limit.
     for (let i = 2; i < MAX_EXERCISES; i += 1) {
-      await user.click(screen.getByRole('button', { name: /añadir ejercicio/i }));
+      await user.click(addButton);
     }
     expect(screen.getAllByLabelText('Ejercicio')).toHaveLength(MAX_EXERCISES);
-    expect(screen.getByRole('button', { name: /añadir ejercicio/i })).toBeDisabled();
+    expect(addButton).toBeDisabled();
   });
 
   it('removing a row never goes below MIN_EXERCISES', async () => {
@@ -109,5 +117,48 @@ describe('ExerciseEditor (controlled)', () => {
     await user.type(repsInput, '999');
 
     expect(onValidityChange).toHaveBeenCalledWith(false);
+  });
+});
+
+describe('form reference and difficulty rating', () => {
+  it('shows a "Ver técnica" button for a row whose exercise has a catalog match', () => {
+    const exercises = [{ exerciseId: 'Flexiones', name: 'Flexiones', sets: 3, reps: 10, durationMinutes: 5, difficulty_feedback: null, feedback_timestamp: null }];
+    render(<ExerciseEditor exercises={exercises} onChange={vi.fn()} onValidityChange={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /ver técnica/i })).toBeInTheDocument();
+  });
+
+  it('opens the FormReferenceModal when "Ver técnica" is clicked', async () => {
+    const user = userEvent.setup();
+    const exercises = [{ exerciseId: 'Flexiones', name: 'Flexiones', sets: 3, reps: 10, durationMinutes: 5, difficulty_feedback: null, feedback_timestamp: null }];
+    render(<ExerciseEditor exercises={exercises} onChange={vi.fn()} onValidityChange={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: /ver técnica/i }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('hides the "Ver técnica" button for a row whose exercise name has no catalog match', () => {
+    const exercises = [{ exerciseId: 'Ejercicio inexistente', name: 'Ejercicio inexistente', sets: 3, reps: 10, durationMinutes: 5, difficulty_feedback: null, feedback_timestamp: null }];
+    render(<ExerciseEditor exercises={exercises} onChange={vi.fn()} onValidityChange={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /ver técnica/i })).not.toBeInTheDocument();
+  });
+
+  it('reports a difficulty selection via onChange with a feedback_timestamp set', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const exercises = [{ exerciseId: 'Flexiones', name: 'Flexiones', sets: 3, reps: 10, durationMinutes: 5, difficulty_feedback: null, feedback_timestamp: null }];
+    render(<ExerciseEditor exercises={exercises} onChange={onChange} onValidityChange={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: /fácil/i }));
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const [updated] = onChange.mock.calls[0];
+    expect(updated[0].difficulty_feedback).toBe('easy');
+    expect(typeof updated[0].feedback_timestamp).toBe('string');
+    expect(() => new Date(updated[0].feedback_timestamp).toISOString()).not.toThrow();
+  });
+
+  it('createEmptyExercise() initializes difficulty_feedback and feedback_timestamp to null', () => {
+    const row = createEmptyExercise();
+    expect(row.difficulty_feedback).toBeNull();
+    expect(row.feedback_timestamp).toBeNull();
   });
 });

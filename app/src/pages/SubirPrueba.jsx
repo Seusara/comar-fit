@@ -129,9 +129,20 @@ function SubirPrueba() {
   // because we're still loading" apart from "genuinely doesn't exist".
   useEffect(() => {
     if (isEditMode && existingWorkout && !hasPrefilled) {
+      // Workouts written before difficulty_feedback/feedback_timestamp
+      // existed have rows with neither key at all (not even `null`) — see
+      // the same normalization already applied in routinePayload.js's
+      // routineExercisesFromLocationState. Default them to `null` here too
+      // so editing+resaving a legacy workout doesn't keep them missing
+      // forever. Spread the real exercise data last so any actual stored
+      // values win over these defaults.
       const initial =
         Array.isArray(existingWorkout.exercises) && existingWorkout.exercises.length > 0
-          ? existingWorkout.exercises
+          ? existingWorkout.exercises.map((exercise) => ({
+              difficulty_feedback: null,
+              feedback_timestamp: null,
+              ...exercise,
+            }))
           : [createEmptyExercise()];
       setExercises(initial);
       setHasPrefilled(true);

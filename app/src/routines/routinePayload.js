@@ -27,5 +27,7 @@ export function routineExercisesFromLocationState(state) {
     sets: Number(exercise.sets),
     reps: Number(exercise.reps),
     durationMinutes: Number(exercise.duration),
+    difficulty_feedback: null,
+    feedback_timestamp: null,
   }));
 }
