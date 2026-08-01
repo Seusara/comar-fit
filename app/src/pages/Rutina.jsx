@@ -7,8 +7,8 @@ import ProgressRing from '../components/ProgressRing';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useActiveDuel } from '../hooks/useActiveDuel';
-import { formatDayKey } from '../utils/dates';
-import { generateDailyRoutine, routineProgressKey } from '../routines/generateDailyRoutine';
+import { generateDailyRoutine, routineHistoryKey, routineProgressKey } from '../routines/generateDailyRoutine';
+import { routineDayKey } from '../routines/routineDay';
 
 function readProgress(key) {
   try {
@@ -28,17 +28,25 @@ function Rutina() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { profile, loading: profileLoading, error: profileError } = useUserProfile();
-  const { duel, loading: duelLoading, error: duelError } = useActiveDuel();
-  const dayKey = formatDayKey(new Date());
+  const { duel } = useActiveDuel();
+  const dayKey = routineDayKey(new Date(), duel?.timezone);
   const progressKey = routineProgressKey(currentUser?.uid ?? 'guest', dayKey);
+  const historyKey = routineHistoryKey(currentUser?.uid ?? 'guest');
+  const recentExerciseIds = readProgress(historyKey);
   const routine = useMemo(() => generateDailyRoutine({
-    profile: profile ?? {}, uid: currentUser?.uid ?? 'guest', dayKey,
+    profile: profile ?? {}, uid: currentUser?.uid ?? 'guest', dayKey, recentExerciseIds,
+  // recentExerciseIds is a storage snapshot; profile/day changes are the regeneration boundaries.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [currentUser?.uid, dayKey, profile]);
   const [completedIds, setCompletedIds] = useState(() => readProgress(progressKey));
 
   useEffect(() => {
     setCompletedIds(readProgress(progressKey));
   }, [progressKey]);
+
+  useEffect(() => {
+    localStorage.setItem(historyKey, JSON.stringify(routine.phases.flatMap((phase) => phase.exercises.map((exercise) => exercise.id))));
+  }, [historyKey, routine]);
 
   const exercises = routine.phases.flatMap((phase) => phase.exercises);
   const validIds = new Set(exercises.map((exercise) => exercise.id));
@@ -63,8 +71,8 @@ function Rutina() {
     navigate('/subir-prueba', { state: { source: 'daily-routine', exercises: selected } });
   }
 
-  const loading = profileLoading || duelLoading;
-  const error = profileError || duelError;
+  const loading = profileLoading;
+  const error = profileError;
   if (loading) return <Layout active="rutina"><p role="status" className="text-center p-8">Cargando rutina...</p></Layout>;
   if (error || !profile) {
     return (
@@ -101,6 +109,9 @@ function Rutina() {
             <p className="font-headline-lg text-lg mt-1">{profile.objective || 'Condición general'}</p>
             <p className="text-on-surface-variant text-sm mt-1">
               {profile.experienceLevel || 'Principiante'} · {routine.durationMinutes} min
+            </p>
+            <p className="text-on-surface-variant text-xs mt-1">
+              Equipo: {Array.isArray(profile.equipment) && profile.equipment.length > 0 ? profile.equipment.join(', ') : 'peso corporal'}
             </p>
             <p className="text-on-surface-variant text-xs mt-2">{completed.length} de {exercises.length} ejercicios</p>
           </div>

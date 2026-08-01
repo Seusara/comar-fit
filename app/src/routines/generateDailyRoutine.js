@@ -53,7 +53,11 @@ export function routineProgressKey(uid, dayKey) {
   return `comar-fit:routine-progress:${uid}:${dayKey}`;
 }
 
-export function generateDailyRoutine({ profile = {}, uid = 'guest', dayKey }) {
+export function routineHistoryKey(uid) {
+  return `comar-fit:routine-history:${uid}`;
+}
+
+export function generateDailyRoutine({ profile = {}, uid = 'guest', dayKey, recentExerciseIds = [] }) {
   const equipment = Array.isArray(profile.equipment) ? profile.equipment : [];
   const normalizedEquipment = new Set(equipment.map(normalize));
   const hasCoreProfile = Boolean(profile.experienceLevel && profile.objective && profile.preferredWorkoutMinutes);
@@ -69,17 +73,26 @@ export function generateDailyRoutine({ profile = {}, uid = 'guest', dayKey }) {
     (!isFallback || exercise.equipment === 'bodyweight')
   ));
 
+  const recent = new Set(Array.isArray(recentExerciseIds) ? recentExerciseIds : []);
   const choose = (phase, target, minimum) => {
     const phaseItems = eligible.filter((exercise) => exercise.phase === phase);
     const goalMatches = phaseItems.filter((exercise) => exercise.goals.includes(goal));
-    const ordered = seededOrder(goalMatches.length >= minimum ? goalMatches : phaseItems, `${seed}:${phase}`);
+    const otherMatches = phaseItems.filter((exercise) => !exercise.goals.includes(goal));
+    const candidates = [...seededOrder(goalMatches, `${seed}:${phase}:goal`), ...seededOrder(otherMatches, `${seed}:${phase}:other`)];
+    const ordered = [...candidates.filter((exercise) => !recent.has(exercise.id)), ...candidates.filter((exercise) => recent.has(exercise.id))];
     return selectWithinMinutes(ordered, target, minimum).map((exercise) => scaleExercise(exercise, level));
   };
 
+  const short = preferredMinutes <= 18;
+  const medium = preferredMinutes <= 24;
+  const warmupTarget = short ? 3 : medium ? 4 : Math.max(5, Math.round(preferredMinutes * 0.18));
+  const recoveryTarget = short ? 3 : medium ? 3 : Math.max(5, Math.round(preferredMinutes * 0.18));
+  const mainTarget = Math.max(8, preferredMinutes - warmupTarget - recoveryTarget);
+
   const phases = [
-    { id: 'warmup', label: PHASE_LABELS.warmup, exercises: choose('warmup', Math.max(4, Math.round(preferredMinutes * 0.2)), 2) },
-    { id: 'main', label: PHASE_LABELS.main, exercises: choose('main', Math.max(10, Math.round(preferredMinutes * 0.6)), 3) },
-    { id: 'recovery', label: PHASE_LABELS.recovery, exercises: choose('recovery', Math.max(4, Math.round(preferredMinutes * 0.2)), 2) },
+    { id: 'warmup', label: PHASE_LABELS.warmup, exercises: choose('warmup', warmupTarget, short ? 1 : 2) },
+    { id: 'main', label: PHASE_LABELS.main, exercises: choose('main', mainTarget, short ? 2 : 3) },
+    { id: 'recovery', label: PHASE_LABELS.recovery, exercises: choose('recovery', recoveryTarget, short || medium ? 1 : 2) },
   ];
   const durationMinutes = phases.flatMap((phase) => phase.exercises).reduce((total, exercise) => total + exercise.minutes, 0);
 

@@ -28,3 +28,12 @@ test('rejects values outside the workout editor limits', () => {
     source: 'daily-routine', exercises: [{ name: 'Flexiones', sets: 21, reps: 10, duration: 5 }],
   }), null);
 });
+
+test('rejects unknown and oversized exercise names', () => {
+  assert.equal(routineExercisesFromLocationState({
+    source: 'daily-routine', exercises: [{ name: 'Ejercicio inventado', sets: 1, reps: 1, duration: 1 }],
+  }), null);
+  assert.equal(routineExercisesFromLocationState({
+    source: 'daily-routine', exercises: [{ name: 'x'.repeat(81), sets: 1, reps: 1, duration: 1 }],
+  }), null);
+});

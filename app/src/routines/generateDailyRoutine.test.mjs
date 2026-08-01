@@ -42,6 +42,25 @@ test('keeps estimated duration near the requested duration', () => {
   assert.ok(routine.durationMinutes <= 35);
 });
 
+test('respects short and long workout duration budgets', () => {
+  for (const requested of [15, 20, 30, 60]) {
+    const routine = generateDailyRoutine({
+      profile: { ...strengthProfile, preferredWorkoutMinutes: requested },
+      uid: 'aaron', dayKey: '2026-08-01',
+    });
+    assert.ok(routine.durationMinutes <= requested + 5, `${requested}-minute plan was ${routine.durationMinutes}`);
+    assert.ok(routine.durationMinutes >= Math.min(requested - 5, 40), `${requested}-minute plan was ${routine.durationMinutes}`);
+  }
+});
+
+test('avoids repeating the same exercise combination from recent history', () => {
+  const input = { profile: strengthProfile, uid: 'aaron', dayKey: '2026-08-02' };
+  const first = generateDailyRoutine(input);
+  const recentExerciseIds = exerciseIds(first);
+  const next = generateDailyRoutine({ ...input, recentExerciseIds });
+  assert.notDeepEqual(exerciseIds(next), recentExerciseIds);
+});
+
 test('scopes saved progress by user and day', () => {
   assert.equal(routineProgressKey('aaron', '2026-08-01'), 'comar-fit:routine-progress:aaron:2026-08-01');
 });
