@@ -4,6 +4,7 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Select from '../components/Select';
+import Avatar from '../components/Avatar';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useActiveDuel } from '../hooks/useActiveDuel';
@@ -12,6 +13,8 @@ import { deriveParticipantActivity } from '../duel/activeDays';
 import { updatePhysicalProfile, updateUserProfile } from '../firebase/firestore';
 import { canUpdatePhysicalProfile, nextPhysicalProfileUpdateAt } from '../firebase/profilePolicy';
 import { logoutUser } from '../firebase/auth';
+import { uploadProfilePhoto } from '../firebase/storage';
+import { processProfileImage, validateProfileImage } from '../profile/profileImage';
 
 const EMPTY_FORM = {
   displayName: '', age: '', height: '', experienceLevel: 'Beginner', objective: '',
@@ -75,6 +78,9 @@ function Perfil() {
   const [physicalSaving, setPhysicalSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [saveError, setSaveError] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoSaving, setPhotoSaving] = useState(false);
+  const [photoProgress, setPhotoProgress] = useState(0);
 
   useEffect(() => { setForm(profileToForm(profile)); }, [profile]);
 
@@ -142,6 +148,30 @@ function Perfil() {
     if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) await logoutUser();
   }
 
+  function choosePhoto(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const error = validateProfileImage(file);
+    setMessage('');
+    setSaveError(error || '');
+    setPhotoFile(error ? null : file);
+  }
+
+  async function savePhoto() {
+    if (!photoFile || photoSaving) return;
+    setPhotoSaving(true); setPhotoProgress(0); setMessage(''); setSaveError('');
+    try {
+      const blob = await processProfileImage(photoFile);
+      const avatarUrl = await uploadProfilePhoto(currentUser.uid, blob, setPhotoProgress);
+      await updateUserProfile(currentUser.uid, { avatarUrl });
+      setPhotoFile(null);
+      setMessage('Foto de perfil actualizada');
+      refresh();
+    } catch {
+      setSaveError('No pudimos actualizar la foto. Intenta nuevamente.');
+    } finally { setPhotoSaving(false); }
+  }
+
   if (loading) return <Layout active="perfil"><p role="status" className="text-center p-8">Cargando perfil...</p></Layout>;
   if (loadError || !profile) return <Layout active="perfil"><p role="alert" className="text-error text-center p-8">No pudimos cargar tu perfil.</p></Layout>;
 
@@ -151,18 +181,28 @@ function Perfil() {
         <Card className="relative overflow-hidden">
           <div className="absolute inset-x-0 top-0 h-1 action-gradient" />
           <div className="flex items-center gap-4">
-            <div className="h-20 w-20 rounded-full action-gradient p-[2px]">
-              <div className="h-full w-full rounded-full bg-surface-container flex items-center justify-center text-3xl font-headline-lg">
-                {profile.displayName?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-            </div>
+            <Avatar name={profile.displayName} src={profile.avatarUrl} />
             <div>
               <p className="text-primary-fixed-dim text-xs uppercase tracking-widest">Perfil de atleta</p>
               <h1 className="font-headline-lg text-2xl mt-1">{profile.displayName}</h1>
               <p className="text-on-surface-variant text-sm">{profile.email ?? currentUser.email}</p>
               <p className="text-on-surface-variant text-xs mt-2">{form.objective || 'Define tu próximo objetivo'}</p>
+              <label className="mt-3 inline-flex min-h-[44px] cursor-pointer items-center gap-2 text-sm font-bold text-primary-fixed-dim">
+                <span className="material-symbols-outlined" aria-hidden="true">photo_camera</span>
+                Cambiar foto
+                <input className="sr-only" type="file" accept="image/*" aria-label="Seleccionar foto de perfil" onChange={choosePhoto} />
+              </label>
             </div>
           </div>
+          {photoFile && (
+            <div className="mt-4 rounded-xl bg-surface-container-low p-3">
+              <p className="text-sm truncate">{photoFile.name}</p>
+              {photoSaving && <p role="status" className="text-xs text-on-surface-variant mt-1">Subiendo foto: {photoProgress}%</p>}
+              <Button type="button" className="w-full mt-3" disabled={photoSaving} onClick={savePhoto}>
+                {photoSaving ? 'Guardando foto...' : 'Guardar foto'}
+              </Button>
+            </div>
+          )}
         </Card>
 
         <section aria-labelledby="profile-stats-title">

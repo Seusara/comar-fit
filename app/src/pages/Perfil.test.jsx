@@ -9,6 +9,8 @@ import { useActiveDuel } from '../hooks/useActiveDuel';
 import { useWorkouts } from '../hooks/useWorkouts';
 import { updateUserProfile, updatePhysicalProfile } from '../firebase/firestore';
 import { logoutUser } from '../firebase/auth';
+import { uploadProfilePhoto } from '../firebase/storage';
+import { processProfileImage, validateProfileImage } from '../profile/profileImage';
 
 vi.mock('../contexts/AuthContext');
 vi.mock('../hooks/useUserProfile');
@@ -16,6 +18,8 @@ vi.mock('../hooks/useActiveDuel');
 vi.mock('../hooks/useWorkouts');
 vi.mock('../firebase/firestore');
 vi.mock('../firebase/auth');
+vi.mock('../firebase/storage');
+vi.mock('../profile/profileImage');
 
 const profile = {
   uid: 'aaron', displayName: 'Aaron', email: 'aaron@example.com', gender: 'M',
@@ -41,6 +45,9 @@ describe('Perfil', () => {
     updateUserProfile.mockResolvedValue(undefined);
     updatePhysicalProfile.mockResolvedValue(undefined);
     logoutUser.mockResolvedValue(undefined);
+    validateProfileImage.mockReturnValue(null);
+    processProfileImage.mockResolvedValue(new Blob(['webp'], { type: 'image/webp' }));
+    uploadProfilePhoto.mockResolvedValue('https://storage/avatar.webp');
   });
 
   it('renders real identity and personal statistics', () => {
@@ -100,5 +107,29 @@ describe('Perfil', () => {
     renderProfile();
     await user.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
     expect(logoutUser).toHaveBeenCalledOnce();
+  });
+
+  it('rejects an invalid profile photo before upload', async () => {
+    validateProfileImage.mockReturnValue('La imagen debe pesar como máximo 2 MB.');
+    const user = userEvent.setup();
+    renderProfile();
+    await user.upload(screen.getByLabelText('Seleccionar foto de perfil'), new File(['x'], 'bad.png', { type: 'image/png' }));
+    expect(screen.getByRole('alert')).toHaveTextContent(/2 MB/i);
+    expect(uploadProfilePhoto).not.toHaveBeenCalled();
+  });
+
+  it('processes, uploads and publishes a valid profile photo', async () => {
+    const refresh = vi.fn();
+    useUserProfile.mockReturnValue({ profile, loading: false, error: null, refresh });
+    const user = userEvent.setup();
+    const file = new File(['x'], 'avatar.png', { type: 'image/png' });
+    renderProfile();
+    await user.upload(screen.getByLabelText('Seleccionar foto de perfil'), file);
+    await user.click(screen.getByRole('button', { name: 'Guardar foto' }));
+    await waitFor(() => expect(processProfileImage).toHaveBeenCalledWith(file));
+    expect(uploadProfilePhoto).toHaveBeenCalledWith('aaron', expect.any(Blob), expect.any(Function));
+    expect(updateUserProfile).toHaveBeenCalledWith('aaron', { avatarUrl: 'https://storage/avatar.webp' });
+    expect(await screen.findByRole('status')).toHaveTextContent('Foto de perfil actualizada');
+    expect(refresh).toHaveBeenCalled();
   });
 });
