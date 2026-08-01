@@ -99,7 +99,7 @@ describe('RevisarPrueba', () => {
     expect(screen.getByText(/primer entrenamiento/i)).toBeInTheDocument();
   });
 
-  it('passes pending/scored/error statuses through to WorkoutCard', () => {
+  it('treats every saved workout as completed, including legacy status values', () => {
     const now = new Date();
     useWorkouts.mockReturnValue({
       workouts: [
@@ -113,9 +113,8 @@ describe('RevisarPrueba', () => {
 
     renderRevisarPrueba();
 
-    expect(screen.getByText(/calculando puntos/i)).toBeInTheDocument();
-    expect(screen.getByText(/55 pts/)).toBeInTheDocument();
-    expect(screen.getByText(/no pudimos calcular los puntos/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/entrenamiento completado/i)).toHaveLength(3);
+    expect(screen.queryByText(/puntos|pts/i)).not.toBeInTheDocument();
   });
 
   it('sorts workouts in descending order by performed date', () => {
