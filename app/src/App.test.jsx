@@ -91,6 +91,15 @@ describe('App routing', () => {
     expect(window.location.pathname).toBe('/revisar-prueba');
   });
 
+  it('routes the Duelo navigation item to the dedicated page', async () => {
+    useAuth.mockReturnValue({ currentUser: { uid: 'aaron' }, authLoading: false });
+    setRoute('/duelo');
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: /duelo semanal/i })).toBeInTheDocument();
+  });
+
   it('sends an authenticated user with an active duel to /dashboard', async () => {
     useAuth.mockReturnValue({ currentUser: { uid: 'uid-1' }, authLoading: false });
     findActiveDuelForUser.mockResolvedValue({ duelId: 'duel-1' });

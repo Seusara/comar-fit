@@ -113,7 +113,7 @@ describe('Layout', () => {
     expect(inactiveItem).not.toHaveAttribute('aria-current');
   });
 
-  it('links Rutina to workout registration and Duelo to the live dashboard', () => {
+  it('links Rutina and Duelo to their dedicated screens', () => {
     render(
       <MemoryRouter>
         <Layout active="inicio"><p>Contenido</p></Layout>
@@ -121,7 +121,7 @@ describe('Layout', () => {
     );
 
     expect(screen.getByRole('link', { name: /rutina/i })).toHaveAttribute('href', '/rutina');
-    expect(screen.getByRole('link', { name: /duelo/i })).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('link', { name: /duelo/i })).toHaveAttribute('href', '/duelo');
   });
 
   it('links Perfil to the functional profile screen', () => {
