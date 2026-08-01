@@ -21,3 +21,48 @@ export const ROUTINE_CATALOG = [
   { id: 'breathing', name: 'Respiración controlada', phase: 'recovery', goals: ['general', 'fuerza', 'resistencia', 'movilidad'], minLevel: 0, equipment: 'bodyweight', minutes: 3, sets: 1, reps: 1, restSeconds: 0 },
   { id: 'leg-stretch', name: 'Estiramiento de piernas', phase: 'recovery', goals: ['fuerza', 'resistencia', 'movilidad'], minLevel: 0, equipment: 'bodyweight', minutes: 3, sets: 1, reps: 1, restSeconds: 0 },
 ];
+
+// Exercise form references and tips (Phase 3.1)
+// Map exercise names to their form reference data for technique videos and tips
+const EXERCISE_REFERENCES = {
+  'Flexiones': {
+    formReferenceUrl: 'https://www.youtube.com/embed/IODxDxX7oi4',
+    formReferenceType: 'youtube',
+    tips: ['Elbows at 45 degrees', 'Keep core tight', 'Full range of motion']
+  },
+  'Sentadillas': {
+    formReferenceUrl: 'https://www.youtube.com/embed/Soa3qhHJO6s',
+    formReferenceType: 'youtube',
+    tips: ['Knees aligned with toes', 'Keep chest up', 'Full depth squat']
+  },
+  'Burpees': {
+    formReferenceUrl: 'https://www.youtube.com/embed/JZQA7VJpgmI',
+    formReferenceType: 'youtube',
+    tips: ['Controlled plank position', 'Explosive jump', 'Full body engagement']
+  },
+  'Escaladores': {
+    formReferenceUrl: 'https://www.youtube.com/embed/nmwgirgXLYM',
+    formReferenceType: 'youtube',
+    tips: ['Fast controlled movement', 'Hip alignment', 'Core engaged']
+  },
+  'Plancha': {
+    formReferenceUrl: 'https://www.youtube.com/embed/pSHjTRCQxIw',
+    formReferenceType: 'youtube',
+    tips: ['Neutral spine', 'Shoulders over wrists', 'Engage core']
+  },
+  'Puente de glúteo': {
+    formReferenceUrl: 'https://www.youtube.com/embed/wPM8icPu4WM',
+    formReferenceType: 'youtube',
+    tips: ['Glutes at top', 'Full hip extension', 'Squeeze at peak']
+  },
+};
+
+/**
+ * Find exercise reference data (form video URL + tips) by exercise name.
+ * Returns null if no reference exists for the exercise.
+ * @param {string} exerciseName - Display name of the exercise
+ * @returns {Object|null} Reference data with formReferenceUrl, formReferenceType, tips
+ */
+export function findExerciseReference(exerciseName) {
+  return EXERCISE_REFERENCES[exerciseName] || null;
+}
