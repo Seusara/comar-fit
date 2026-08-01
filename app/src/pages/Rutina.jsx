@@ -5,6 +5,7 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import ProgressRing from '../components/ProgressRing';
 import FormReferenceModal from '../components/FormReferenceModal';
+import RestTimer from '../components/RestTimer';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useActiveDuel } from '../hooks/useActiveDuel';
@@ -57,17 +58,36 @@ function Rutina() {
   const completed = completedIds.filter((id) => validIds.has(id));
   const percentage = exercises.length === 0 ? 0 : (completed.length / exercises.length) * 100;
   const [openReferenceExerciseId, setOpenReferenceExerciseId] = useState(null);
+  const [restingExerciseId, setRestingExerciseId] = useState(null);
 
   function toggleExercise(id) {
+    const wasCompleted = completedIds.includes(id);
     setCompletedIds((current) => {
-      const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
+      const next = wasCompleted ? current.filter((item) => item !== id) : [...current, id];
       localStorage.setItem(progressKey, JSON.stringify(next));
       return next;
     });
+
+    // Only start the rest countdown when checking an exercise off (not when
+    // un-checking), and only if it actually has rest time and isn't the
+    // last exercise in the routine — resting after the final exercise has
+    // nothing "next" to lead into.
+    if (!wasCompleted) {
+      const exerciseIndex = exercises.findIndex((item) => item.id === id);
+      const exercise = exercises[exerciseIndex];
+      const isLast = exerciseIndex === exercises.length - 1;
+      if (exercise && exercise.restSeconds > 0 && !isLast) {
+        setRestingExerciseId(id);
+      }
+    }
   }
 
   function closeReferenceModal() {
     setOpenReferenceExerciseId(null);
+  }
+
+  function endRest() {
+    setRestingExerciseId(null);
   }
 
   function registerCompleted() {
@@ -182,6 +202,23 @@ function Rutina() {
           <Button variant="secondary" className="w-full" onClick={() => navigate('/subir-prueba')}>Registro manual</Button>
         </div>
       </div>
+
+      {restingExerciseId && (() => {
+        const restingIndex = exercises.findIndex((item) => item.id === restingExerciseId);
+        const restingExercise = exercises[restingIndex];
+        const nextExercise = exercises[restingIndex + 1];
+        if (!restingExercise) return null;
+        return (
+          <RestTimer
+            key={restingExerciseId}
+            initialSeconds={restingExercise.restSeconds}
+            exerciseName={restingExercise.name}
+            nextExerciseName={nextExercise?.name}
+            onComplete={endRest}
+            onSkip={endRest}
+          />
+        );
+      })()}
     </Layout>
   );
 }
