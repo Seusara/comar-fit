@@ -52,6 +52,18 @@ export function subscribeToWorkouts(duelId, userId, onData, onError) {
   );
 }
 
+export function subscribeToDuelWorkouts(duelId, onData, onError) {
+  const workoutsQuery = query(
+    workoutsCollection(duelId),
+    orderBy('performedAt', 'desc'),
+  );
+  return onSnapshot(
+    workoutsQuery,
+    (snapshot) => onData(snapshot.docs.map((item) => ({ workoutId: item.id, ...item.data() }))),
+    onError,
+  );
+}
+
 export function subscribeToDuelWeek(duelId, weekId, onData, onError) {
   return onSnapshot(
     doc(db, 'duels', duelId, 'weeks', weekId),
