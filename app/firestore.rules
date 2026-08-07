@@ -273,6 +273,68 @@ service cloud.firestore {
 
         allow delete: if false;
       }
+
+      match /runSessions/{runId} {
+        // Reads: duel participants may read run session
+        allow read: if isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data);
+
+        // Create: only owner may create runSession for run days
+        allow create: if isOwner(request.resource.data.userId)
+          && isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data)
+          && request.resource.data.duelId == duelId
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            'userId','duelId','weekId','day','planPath',
+            'targetDistanceMeters','targetDurationSeconds',
+            'distanceMeters','durationSeconds','averagePaceSecondsPerKm',
+            'status','createdAt','updatedAt','revision'
+          ])
+          && request.resource.data.weekId is string
+          && request.resource.data.day is int
+          && request.resource.data.day >= 1 && request.resource.data.day <= 7
+          && request.resource.data.revision is int
+          && request.resource.data.revision == 1
+          && runId.matches('^' + request.resource.data.userId + '_' + request.resource.data.weekId + '_d[1-7]$')
+          && request.resource.data.targetDistanceMeters is int
+          && request.resource.data.targetDurationSeconds is int
+          && request.resource.data.targetDistanceMeters > 0
+          && request.resource.data.targetDurationSeconds > 0
+          && request.resource.data.distanceMeters == 0
+          && request.resource.data.durationSeconds == 0
+          && (request.resource.data.status == 'pending')
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+        // Update: only owner may update limited fields; immutable fields must remain unchanged
+        allow update: if isOwner(resource.data.userId)
+          && request.auth.uid == resource.data.userId
+          && request.resource.data.duelId == resource.data.duelId
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.weekId == resource.data.weekId
+          && request.resource.data.day == resource.data.day
+          && request.resource.data.planPath == resource.data.planPath
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.targetDistanceMeters == resource.data.targetDistanceMeters
+          && request.resource.data.targetDurationSeconds == resource.data.targetDurationSeconds
+          && request.resource.data.keys().hasOnly([
+            'userId','duelId','weekId','day','planPath',
+            'targetDistanceMeters','targetDurationSeconds',
+            'distanceMeters','durationSeconds','averagePaceSecondsPerKm',
+            'status','startedAt','completedAt','createdAt','updatedAt','revision'
+          ])
+          && request.resource.data.distanceMeters is int
+          && request.resource.data.durationSeconds is int
+          && (request.resource.data.averagePaceSecondsPerKm is number || request.resource.data.averagePaceSecondsPerKm == null)
+          && request.resource.data.status in ['pending','active','completed','incomplete']
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.revision is int
+          && request.resource.data.revision == resource.data.revision + 1
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'distanceMeters','durationSeconds','averagePaceSecondsPerKm','status','startedAt','completedAt','updatedAt','revision'
+          ]);
+
+        allow delete: if false;
+      }
     }
 
     match /{document=**} {
