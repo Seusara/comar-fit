@@ -73,6 +73,3 @@ export async function startRunSession(duelId, runId) {
   });
 }
 
-export function makeRunDocRef(duelId, runId) {
-  return runDocRef(duelId, runId);
-}

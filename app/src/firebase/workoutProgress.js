@@ -1,4 +1,4 @@
-import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, runTransaction, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db } from './config';
 
 function progressDocRef(duelId, progressId) {
