@@ -93,6 +93,7 @@ function Dashboard() {
 
   // Weekly plan: ensure a plan exists and read today's entry
   const [todayPlan, setTodayPlan] = React.useState(null);
+  const [todayProgress, setTodayProgress] = React.useState(null);
   React.useEffect(() => {
     let mounted = true;
     async function ensurePlan() {
@@ -103,7 +104,24 @@ function Dashboard() {
       try {
         await plansModule.generatePlanIfMissing(duelId, currentUser.uid, weekId, profile);
         const plan = await plansModule.getPlan(duelId, currentUser.uid, weekId);
-        if (mounted) setTodayPlan(plan?.days?.[String( (new Date()).getUTCDay() === 0 ? 7 : (new Date()).getUTCDay() )] ?? null);
+        const isoWeekday = String((new Date()).getUTCDay() === 0 ? 7 : (new Date()).getUTCDay());
+        const todays = plan?.days?.[isoWeekday] ?? null;
+        if (mounted) setTodayPlan(todays);
+
+        // Only create/load progress for workout days
+        if (todays && todays.type === 'workout') {
+          try {
+            const { makeProgressId, getOrCreateWorkoutProgress, getWorkoutProgress } = await import('../firebase/workoutProgress');
+            const progressId = makeProgressId(currentUser.uid, weekId, Number(isoWeekday));
+            // Create or get progress using the plan snapshot for this user
+            const progress = await getOrCreateWorkoutProgress(duelId, currentUser.uid, weekId, Number(isoWeekday), todays);
+            if (mounted) setTodayProgress(progress);
+          } catch (err) {
+            // if not a workout day or creation rejected, leave progress null
+            console.error('Could not ensure workout progress', err);
+          }
+        }
+
       } catch (err) {
         // swallow errors for now; UI will continue showing workouts
         console.error('Could not ensure plan', err);
@@ -165,11 +183,41 @@ function Dashboard() {
               ) : (
                 <div>
                   <p className="text-on-surface font-body-md text-sm font-bold">Hoy te toca: {todayPlan.focus.replace('_',' + ')}</p>
-                  <ul className="mt-2 space-y-2">
-                    {todayPlan.exercises.map((ex) => (
-                      <li key={ex.id} className="text-on-surface-variant text-sm">{ex.name} — {ex.sets} x {ex.reps ?? (ex.durationSeconds ? `${ex.durationSeconds}s` : '')}</li>
-                    ))}
-                  </ul>
+                  <div className="mt-2">
+                    {todayPlan.exercises.map((ex) => {
+                      const progressEx = todayProgress?.exercises?.find((p) => p.id === ex.id);
+                      const completed = !!progressEx?.completed;
+                      return (
+                        <label key={ex.id} className="flex items-center gap-3 text-on-surface-variant text-sm">
+                          <input type="checkbox" checked={completed} onChange={async (e) => {
+                            // toggle via workoutProgress API
+                            try {
+                              const { toggleExerciseCompletion, makeProgressId } = await import('../firebase/workoutProgress');
+                              const weekId = (await import('../firebase/plans')).default.getWeekId(now);
+                              const progressId = makeProgressId(currentUser.uid, weekId, dayNumber);
+                              const updated = await toggleExerciseCompletion(duelId, progressId, ex.id, e.target.checked);
+                              setTodayProgress(updated);
+                            } catch (err) {
+                              console.error('Could not toggle exercise', err);
+                            }
+                          }} />
+                          <span>{ex.name} — {ex.sets} x {ex.reps ?? (ex.durationSeconds ? `${ex.durationSeconds}s` : '')}</span>
+                        </label>
+                      );
+                    })}
+
+                    {/* progress summary */}
+                    <div className="mt-2 text-on-surface-variant text-sm">
+                      {todayProgress ? (
+                        <div>
+                          <div>{todayProgress.completedCount} de {todayProgress.totalCount} ejercicios</div>
+                          <div>{todayProgress.completionRate}% completado {todayProgress.completionRate >= 80 ? '✅ Entrenamiento completado' : ''}</div>
+                        </div>
+                      ) : (
+                        <div>Progreso no iniciado</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )
             ) : (

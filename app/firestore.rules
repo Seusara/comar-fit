@@ -205,6 +205,74 @@ service cloud.firestore {
         allow update: if false;
         allow delete: if false;
       }
+
+      match /workoutProgress/{progressId} {
+        // Reads: any duel participant may read the workout progress
+        allow read: if isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data);
+
+        // Create: only the owner may create their progress for workout days
+        allow create: if isOwner(request.resource.data.userId)
+          && isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data)
+          && request.resource.data.duelId == duelId
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            'userId','duelId','weekId','day','planPath','exercises',
+            'totalCount','completedCount','completionRate','status',
+            'createdAt','updatedAt','revision'
+          ])
+          && request.resource.data.weekId is string
+          && request.resource.data.day is int
+          && request.resource.data.day >= 1 && request.resource.data.day <= 7
+          && request.resource.data.revision is int
+          && request.resource.data.revision == 1
+          && progressId.matches('^' + request.resource.data.userId + '_' + request.resource.data.weekId + '_d[1-7]$')
+          && request.resource.data.exercises is list
+          && request.resource.data.totalCount is int
+          && request.resource.data.totalCount > 0
+          && request.resource.data.totalCount == request.resource.data.exercises.size()
+          && request.resource.data.completedCount is int
+          && request.resource.data.completedCount == 0
+          && request.resource.data.completedCount >= 0
+          && request.resource.data.completedCount <= request.resource.data.totalCount
+          && request.resource.data.completionRate is int
+          && request.resource.data.completionRate == 0
+          && request.resource.data.completionRate >= 0 && request.resource.data.completionRate <= 100
+          && request.resource.data.status == 'pending'
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+        // Update: only owner may update limited fields; immutable fields must remain unchanged
+        allow update: if isOwner(resource.data.userId)
+          && request.auth.uid == resource.data.userId
+          && request.resource.data.duelId == resource.data.duelId
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.weekId == resource.data.weekId
+          && request.resource.data.day == resource.data.day
+          && request.resource.data.planPath == resource.data.planPath
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.totalCount == resource.data.totalCount
+          && request.resource.data.keys().hasOnly([
+            'userId','duelId','weekId','day','planPath','exercises',
+            'totalCount','completedCount','completionRate','status',
+            'createdAt','updatedAt','revision'
+          ])
+          && request.resource.data.exercises is list
+          && request.resource.data.totalCount == request.resource.data.exercises.size()
+          && request.resource.data.completedCount is int
+          && request.resource.data.completedCount >= 0
+          && request.resource.data.completedCount <= request.resource.data.totalCount
+          && request.resource.data.completionRate is int
+          && request.resource.data.completionRate >= 0 && request.resource.data.completionRate <= 100
+          && (request.resource.data.status == 'pending' || request.resource.data.status == 'partial' || request.resource.data.status == 'completed')
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.revision is int
+          && request.resource.data.revision == resource.data.revision + 1
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'exercises','completedCount','completionRate','status','updatedAt','revision'
+          ]);
+
+        allow delete: if false;
+      }
     }
 
     match /{document=**} {
