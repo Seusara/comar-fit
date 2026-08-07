@@ -184,6 +184,27 @@ service cloud.firestore {
         );
         allow write: if false;
       }
+
+      match /plans/{planUserId}/weeks/{weekId} {
+        // Reads: any duel participant may read the plan document
+        allow read: if isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data);
+
+        // Create: only the owner may create their plan once
+        allow create: if isOwner(planUserId)
+          && isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data)
+          && request.resource.data.keys().hasOnly(['userId','weekId','status','generatedAt','revision','days'])
+          && request.resource.data.userId == planUserId
+          && request.resource.data.weekId == weekId
+          && request.resource.data.status == 'generated'
+          && request.resource.data.revision is int
+          && request.resource.data.revision == 1
+          && request.resource.data.days is map
+          && request.resource.data.days.size() > 0;
+
+        // No updates allowed in this phase
+        allow update: if false;
+        allow delete: if false;
+      }
     }
 
     match /{document=**} {
