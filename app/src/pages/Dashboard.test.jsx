@@ -178,6 +178,46 @@ describe('Dashboard', () => {
     expect(await screen.findByText(/carrera en curso/i)).toBeInTheDocument();
   });
 
+  it('disables run start while the session activation is in flight', async () => {
+    vi.setSystemTime(new Date('2026-08-08T12:00:00Z'));
+    getWeekId.mockReturnValue('2026-W32');
+    getPlan.mockResolvedValue(RUN_PLAN);
+    makeRunId.mockReturnValue('aaron_2026-W32_d6');
+    getOrCreateRunSession.mockResolvedValue({ runId: 'aaron_2026-W32_d6', status: 'pending' });
+    let resolveStart;
+    startRunSession.mockReturnValue(new Promise((resolve) => {
+      resolveStart = resolve;
+    }));
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    renderDashboard();
+
+    const startButton = await screen.findByRole('button', { name: /iniciar carrera/i });
+    await user.click(startButton);
+
+    expect(startButton).toBeDisabled();
+
+    resolveStart({ runId: 'aaron_2026-W32_d6', status: 'active' });
+    expect(await screen.findByText(/carrera en curso/i)).toBeInTheDocument();
+  });
+
+  it('shows a recoverable error when starting the run session is rejected', async () => {
+    vi.setSystemTime(new Date('2026-08-08T12:00:00Z'));
+    getWeekId.mockReturnValue('2026-W32');
+    getPlan.mockResolvedValue(RUN_PLAN);
+    makeRunId.mockReturnValue('aaron_2026-W32_d6');
+    getOrCreateRunSession.mockResolvedValue({ runId: 'aaron_2026-W32_d6', status: 'pending' });
+    startRunSession.mockRejectedValue(new Error('offline'));
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    renderDashboard();
+
+    await user.click(await screen.findByRole('button', { name: /iniciar carrera/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/no pudimos iniciar la carrera/i);
+    expect(screen.getByRole('button', { name: /iniciar carrera/i })).not.toBeDisabled();
+  });
+
   it('shows an error message when a hook reports an error', () => {
     useDuelWorkouts.mockReturnValue({ workouts: [], loading: false, error: new Error('boom') });
 
