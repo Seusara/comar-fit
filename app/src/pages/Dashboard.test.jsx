@@ -70,6 +70,25 @@ describe('Dashboard', () => {
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
 
+  it('renders after the duel finishes loading', () => {
+    let loading = true;
+    useActiveDuel.mockImplementation(() => (
+      loading ? { duel: null, loading: true, error: null } : DEFAULT_DUEL
+    ));
+
+    const view = renderDashboard();
+    expect(screen.getByText(/cargando/i)).toBeInTheDocument();
+
+    loading = false;
+    view.rerender(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { name: /día 3 de 7/i })).toBeInTheDocument();
+  });
+
   it('shows an error message when a hook reports an error', () => {
     useDuelWorkouts.mockReturnValue({ workouts: [], loading: false, error: new Error('boom') });
 

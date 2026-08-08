@@ -54,6 +54,46 @@ function Dashboard() {
   // constantly.
   const loading = duelLoading || workoutsLoading;
   const error = duelError || workoutsError || null;
+  const now = React.useMemo(() => new Date(), []);
+
+  // Weekly plan: ensure a plan exists and read today's entry
+  const [todayPlan, setTodayPlan] = React.useState(null);
+  const [todayProgress, setTodayProgress] = React.useState(null);
+  React.useEffect(() => {
+    let mounted = true;
+    async function ensurePlan() {
+      if (!duelId || !currentUser) return;
+      const { default: plansModule } = await import('../firebase/plans');
+      const weekId = plansModule.getWeekId(now);
+      const profile = (duel?.participantProfiles || {})[currentUser.uid] || { gender: currentUser?.gender || 'M' };
+      try {
+        await plansModule.generatePlanIfMissing(duelId, currentUser.uid, weekId, profile);
+        const plan = await plansModule.getPlan(duelId, currentUser.uid, weekId);
+        const isoWeekday = String((new Date()).getUTCDay() === 0 ? 7 : (new Date()).getUTCDay());
+        const todays = plan?.days?.[isoWeekday] ?? null;
+        if (mounted) setTodayPlan(todays);
+
+        // Only create/load progress for workout days
+        if (todays && todays.type === 'workout') {
+          try {
+            const { getOrCreateWorkoutProgress } = await import('../firebase/workoutProgress');
+            // Create or get progress using the plan snapshot for this user
+            const progress = await getOrCreateWorkoutProgress(duelId, currentUser.uid, weekId, Number(isoWeekday), todays);
+            if (mounted) setTodayProgress(progress);
+          } catch (err) {
+            // if not a workout day or creation rejected, leave progress null
+            console.error('Could not ensure workout progress', err);
+          }
+        }
+
+      } catch (err) {
+        // swallow errors for now; UI will continue showing workouts
+        console.error('Could not ensure plan', err);
+      }
+    }
+    ensurePlan();
+    return () => { mounted = false; };
+  }, [duelId, currentUser, now]);
 
   if (loading) {
     return (
@@ -79,7 +119,6 @@ function Dashboard() {
   const uidB = duel?.userB_uid;
   const nameA = duel?.participantNames?.[uidA] || labelForUid(uidA, 'Jugador 1');
   const nameB = duel?.participantNames?.[uidB] || labelForUid(uidB, 'Jugador 2');
-  const now = new Date();
   const { currentWeek } = deriveWeeklyDuelHistory(workouts, duel, now);
   const activityA = currentWeek.participantA;
   const activityB = currentWeek.participantB;
@@ -91,47 +130,6 @@ function Dashboard() {
     behind: 'Tu rival va adelante',
     tied: 'Van iguales',
   }[comparison];
-
-  // Weekly plan: ensure a plan exists and read today's entry
-  const [todayPlan, setTodayPlan] = React.useState(null);
-  const [todayProgress, setTodayProgress] = React.useState(null);
-  React.useEffect(() => {
-    let mounted = true;
-    async function ensurePlan() {
-      if (!duelId || !currentUser) return;
-      const { default: plansModule } = await import('../firebase/plans');
-      const weekId = plansModule.getWeekId(now);
-      const profile = (duel?.participantProfiles || {})[currentUser.uid] || { gender: currentUser?.gender || 'M' };
-      try {
-        await plansModule.generatePlanIfMissing(duelId, currentUser.uid, weekId, profile);
-        const plan = await plansModule.getPlan(duelId, currentUser.uid, weekId);
-        const isoWeekday = String((new Date()).getUTCDay() === 0 ? 7 : (new Date()).getUTCDay());
-        const todays = plan?.days?.[isoWeekday] ?? null;
-        if (mounted) setTodayPlan(todays);
-
-        // Only create/load progress for workout days
-        if (todays && todays.type === 'workout') {
-          try {
-            const { makeProgressId, getOrCreateWorkoutProgress, getWorkoutProgress } = await import('../firebase/workoutProgress');
-            const progressId = makeProgressId(currentUser.uid, weekId, Number(isoWeekday));
-            // Create or get progress using the plan snapshot for this user
-            const progress = await getOrCreateWorkoutProgress(duelId, currentUser.uid, weekId, Number(isoWeekday), todays);
-            if (mounted) setTodayProgress(progress);
-          } catch (err) {
-            // if not a workout day or creation rejected, leave progress null
-            console.error('Could not ensure workout progress', err);
-          }
-        }
-
-      } catch (err) {
-        // swallow errors for now; UI will continue showing workouts
-        console.error('Could not ensure plan', err);
-      }
-    }
-    ensurePlan();
-    return () => { mounted = false; };
-  }, [duelId, currentUser, now]);
-
 
   // "Día X de 7" measured against the duel's real week start, not the local
   // browser's day-of-week.
