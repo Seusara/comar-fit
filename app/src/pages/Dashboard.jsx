@@ -24,6 +24,11 @@ import {
   toggleExerciseCompletion,
   makeProgressId,
 } from '../firebase/workoutProgress';
+import {
+  getOrCreateRunSession,
+  makeRunId,
+  startRunSession,
+} from '../firebase/runSessions';
 
 // Longest uid we're willing to treat as a human-readable label. Real Firebase
 // uids are ~28 opaque characters, and capitalizing one renders garbage like
@@ -73,6 +78,7 @@ function Dashboard() {
 
   const [weeklyPlan, setWeeklyPlan] = React.useState(null);
   const [todayProgress, setTodayProgress] = React.useState(null);
+  const [runSession, setRunSession] = React.useState(null);
   const [planLoading, setPlanLoading] = React.useState(false);
   const [planError, setPlanError] = React.useState(null);
   const [actionPending, setActionPending] = React.useState(false);
@@ -93,8 +99,9 @@ function Dashboard() {
       const today = plan?.days?.[String(currentDay)] ?? null;
 
       if (mountedRef.current) {
-        setWeeklyPlan(plan);
+        if (today?.type !== 'run') setWeeklyPlan(plan);
         setTodayProgress(null);
+        setRunSession(null);
       }
 
       if (today?.type === 'workout') {
@@ -106,6 +113,21 @@ function Dashboard() {
           today,
         );
         if (mountedRef.current) setTodayProgress(progress);
+      }
+
+      if (today?.type === 'run') {
+        const runId = makeRunId(currentUser.uid, weekId, currentDay);
+        const session = await getOrCreateRunSession(
+          duelId,
+          currentUser.uid,
+          weekId,
+          currentDay,
+          today,
+        );
+        if (mountedRef.current) {
+          setRunSession({ ...session, runId });
+          setWeeklyPlan(plan);
+        }
       }
     } catch (err) {
       if (mountedRef.current) setPlanError('No pudimos cargar tu semana.');
@@ -137,6 +159,21 @@ function Dashboard() {
       if (mountedRef.current) setActionPending(false);
     }
   }, [currentDay, currentUser?.uid, duelId, weekId]);
+
+  const handleStartRun = React.useCallback(async () => {
+    if (!duelId || !runSession?.runId) return;
+
+    setActionPending(true);
+    setPlanError(null);
+    try {
+      const updated = await startRunSession(duelId, runSession.runId);
+      if (mountedRef.current) setRunSession(updated);
+    } catch (err) {
+      if (mountedRef.current) setPlanError('No pudimos iniciar la carrera.');
+    } finally {
+      if (mountedRef.current) setActionPending(false);
+    }
+  }, [duelId, runSession?.runId]);
 
   if (loading) {
     return (
@@ -190,11 +227,12 @@ function Dashboard() {
           plan={weeklyPlan}
           currentDay={currentDay}
           progress={todayProgress}
-          runSession={null}
+          runSession={runSession}
           loading={planLoading}
           error={planError}
           actionPending={actionPending}
           onToggleExercise={handleToggleExercise}
+          onStartRun={handleStartRun}
           onRetry={loadWeeklyPlan}
         />
 

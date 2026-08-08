@@ -12,12 +12,18 @@ import {
   generatePlanIfMissing,
   getPlan,
 } from '../firebase/plans';
+import {
+  getOrCreateRunSession,
+  makeRunId,
+  startRunSession,
+} from '../firebase/runSessions';
 
 vi.mock('../hooks/useActiveDuel');
 vi.mock('../hooks/useDuelWorkouts');
 vi.mock('../contexts/AuthContext');
 vi.mock('../firebase/plans');
 vi.mock('../firebase/workoutProgress');
+vi.mock('../firebase/runSessions');
 
 // Wednesday of the duel week, so "Día X de 7" and the countdown are
 // deterministic regardless of when the suite actually runs.
@@ -55,6 +61,18 @@ const WORKOUT_PLAN = {
     4: { type: 'rest' },
     5: { type: 'run', target: { distanceMeters: 2000, durationSeconds: 1200 } },
     6: { type: 'rest' },
+    7: { type: 'rest' },
+  },
+};
+
+const RUN_PLAN = {
+  days: {
+    1: { type: 'rest' },
+    2: { type: 'rest' },
+    3: { type: 'rest' },
+    4: { type: 'rest' },
+    5: { type: 'rest' },
+    6: { type: 'run', target: { distanceMeters: 2000, durationSeconds: 1200 } },
     7: { type: 'rest' },
   },
 };
@@ -134,6 +152,30 @@ describe('Dashboard', () => {
     await user.click(screen.getByRole('button', { name: /reintentar/i }));
 
     expect(await screen.findByText(/pecho \+ tríceps/i)).toBeInTheDocument();
+  });
+
+  it('creates and starts the current run session', async () => {
+    vi.setSystemTime(new Date('2026-08-08T12:00:00Z'));
+    getWeekId.mockReturnValue('2026-W32');
+    getPlan.mockResolvedValue(RUN_PLAN);
+    makeRunId.mockReturnValue('aaron_2026-W32_d6');
+    getOrCreateRunSession.mockResolvedValue({ runId: 'aaron_2026-W32_d6', status: 'pending' });
+    startRunSession.mockResolvedValue({ runId: 'aaron_2026-W32_d6', status: 'active' });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    renderDashboard();
+
+    await user.click(await screen.findByRole('button', { name: /iniciar carrera/i }));
+
+    expect(getOrCreateRunSession).toHaveBeenCalledWith(
+      'duel-1',
+      'aaron',
+      '2026-W32',
+      6,
+      RUN_PLAN.days[6],
+    );
+    expect(startRunSession).toHaveBeenCalledWith('duel-1', 'aaron_2026-W32_d6');
+    expect(await screen.findByText(/carrera en curso/i)).toBeInTheDocument();
   });
 
   it('shows an error message when a hook reports an error', () => {
