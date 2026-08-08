@@ -17,6 +17,13 @@ import VSDisplay from '../components/VSDisplay';
 import ProgressRing from '../components/ProgressRing';
 import StreakBadge from '../components/StreakBadge';
 import CountdownTimer from '../components/CountdownTimer';
+import WeeklyPlanCard from '../components/WeeklyPlanCard';
+import { getWeekId, generatePlanIfMissing, getPlan } from '../firebase/plans';
+import {
+  getOrCreateWorkoutProgress,
+  toggleExerciseCompletion,
+  makeProgressId,
+} from '../firebase/workoutProgress';
 
 // Longest uid we're willing to treat as a human-readable label. Real Firebase
 // uids are ~28 opaque characters, and capitalizing one renders garbage like
@@ -55,45 +62,81 @@ function Dashboard() {
   const loading = duelLoading || workoutsLoading;
   const error = duelError || workoutsError || null;
   const now = React.useMemo(() => new Date(), []);
+  const weekId = React.useMemo(() => getWeekId(now), [now]);
+  const currentDay = React.useMemo(() => {
+    const day = now.getUTCDay();
+    return day === 0 ? 7 : day;
+  }, [now]);
+  const profileGender = duel?.participantProfiles?.[currentUser?.uid]?.gender
+    ?? currentUser?.gender
+    ?? 'M';
 
-  // Weekly plan: ensure a plan exists and read today's entry
-  const [todayPlan, setTodayPlan] = React.useState(null);
+  const [weeklyPlan, setWeeklyPlan] = React.useState(null);
   const [todayProgress, setTodayProgress] = React.useState(null);
-  React.useEffect(() => {
-    let mounted = true;
-    async function ensurePlan() {
-      if (!duelId || !currentUser) return;
-      const { default: plansModule } = await import('../firebase/plans');
-      const weekId = plansModule.getWeekId(now);
-      const profile = (duel?.participantProfiles || {})[currentUser.uid] || { gender: currentUser?.gender || 'M' };
-      try {
-        await plansModule.generatePlanIfMissing(duelId, currentUser.uid, weekId, profile);
-        const plan = await plansModule.getPlan(duelId, currentUser.uid, weekId);
-        const isoWeekday = String((new Date()).getUTCDay() === 0 ? 7 : (new Date()).getUTCDay());
-        const todays = plan?.days?.[isoWeekday] ?? null;
-        if (mounted) setTodayPlan(todays);
+  const [planLoading, setPlanLoading] = React.useState(false);
+  const [planError, setPlanError] = React.useState(null);
+  const [actionPending, setActionPending] = React.useState(false);
+  const mountedRef = React.useRef(false);
 
-        // Only create/load progress for workout days
-        if (todays && todays.type === 'workout') {
-          try {
-            const { getOrCreateWorkoutProgress } = await import('../firebase/workoutProgress');
-            // Create or get progress using the plan snapshot for this user
-            const progress = await getOrCreateWorkoutProgress(duelId, currentUser.uid, weekId, Number(isoWeekday), todays);
-            if (mounted) setTodayProgress(progress);
-          } catch (err) {
-            // if not a workout day or creation rejected, leave progress null
-            console.error('Could not ensure workout progress', err);
-          }
-        }
+  const loadWeeklyPlan = React.useCallback(async () => {
+    if (!duelId || !currentUser?.uid) return;
 
-      } catch (err) {
-        // swallow errors for now; UI will continue showing workouts
-        console.error('Could not ensure plan', err);
-      }
+    if (mountedRef.current) {
+      setPlanLoading(true);
+      setPlanError(null);
     }
-    ensurePlan();
-    return () => { mounted = false; };
-  }, [duelId, currentUser, now]);
+
+    try {
+      const profile = { gender: profileGender };
+      await generatePlanIfMissing(duelId, currentUser.uid, weekId, profile);
+      const plan = await getPlan(duelId, currentUser.uid, weekId);
+      const today = plan?.days?.[String(currentDay)] ?? null;
+
+      if (mountedRef.current) {
+        setWeeklyPlan(plan);
+        setTodayProgress(null);
+      }
+
+      if (today?.type === 'workout') {
+        const progress = await getOrCreateWorkoutProgress(
+          duelId,
+          currentUser.uid,
+          weekId,
+          currentDay,
+          today,
+        );
+        if (mountedRef.current) setTodayProgress(progress);
+      }
+    } catch (err) {
+      if (mountedRef.current) setPlanError('No pudimos cargar tu semana.');
+    } finally {
+      if (mountedRef.current) setPlanLoading(false);
+    }
+  }, [currentDay, currentUser?.uid, duelId, profileGender, weekId]);
+
+  React.useEffect(() => {
+    mountedRef.current = true;
+    loadWeeklyPlan();
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [loadWeeklyPlan]);
+
+  const handleToggleExercise = React.useCallback(async (exerciseId, completed) => {
+    if (!duelId || !currentUser?.uid) return;
+
+    setActionPending(true);
+    setPlanError(null);
+    try {
+      const progressId = makeProgressId(currentUser.uid, weekId, currentDay);
+      const updated = await toggleExerciseCompletion(duelId, progressId, exerciseId, completed);
+      if (mountedRef.current) setTodayProgress(updated);
+    } catch (err) {
+      if (mountedRef.current) setPlanError('No pudimos actualizar tu progreso.');
+    } finally {
+      if (mountedRef.current) setActionPending(false);
+    }
+  }, [currentDay, currentUser?.uid, duelId, weekId]);
 
   if (loading) {
     return (
@@ -143,6 +186,18 @@ function Dashboard() {
           <h1 className="font-headline-lg-mobile text-headline-lg-mobile">Día {dayNumber} de 7</h1>
         </section>
 
+        <WeeklyPlanCard
+          plan={weeklyPlan}
+          currentDay={currentDay}
+          progress={todayProgress}
+          runSession={null}
+          loading={planLoading}
+          error={planError}
+          actionPending={actionPending}
+          onToggleExercise={handleToggleExercise}
+          onRetry={loadWeeklyPlan}
+        />
+
         <VSDisplay
           participantA={{ name: nameA, avatarUrl: duel?.participantProfiles?.[uidA]?.avatarUrl, status: `${activityA.activeDays}/7 días` }}
           participantB={{ name: nameB, avatarUrl: duel?.participantProfiles?.[uidB]?.avatarUrl, status: `${activityB.activeDays}/7 días` }}
@@ -168,61 +223,6 @@ function Dashboard() {
           <h2 className="font-label-md text-on-surface uppercase tracking-widest text-xs mb-4">
             Actividad reciente
           </h2>
-
-          {/* Today's plan summary */}
-          <div className="mb-4">
-            {todayPlan ? (
-              todayPlan.type === 'rest' ? (
-                <p className="text-on-surface-variant text-sm">Hoy toca descansar</p>
-              ) : todayPlan.type === 'run' ? (
-                <div>
-                  <p className="text-on-surface font-body-md text-sm font-bold">Hoy toca carrera</p>
-                  <p className="text-on-surface-variant text-xs mt-0.5">Meta: {todayPlan.target.distanceMeters/1000} km o {Math.round(todayPlan.target.durationSeconds/60)} min</p>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-on-surface font-body-md text-sm font-bold">Hoy te toca: {todayPlan.focus.replace('_',' + ')}</p>
-                  <div className="mt-2">
-                    {todayPlan.exercises.map((ex) => {
-                      const progressEx = todayProgress?.exercises?.find((p) => p.id === ex.id);
-                      const completed = !!progressEx?.completed;
-                      return (
-                        <label key={ex.id} className="flex items-center gap-3 text-on-surface-variant text-sm">
-                          <input type="checkbox" checked={completed} onChange={async (e) => {
-                            // toggle via workoutProgress API
-                            try {
-                              const { toggleExerciseCompletion, makeProgressId } = await import('../firebase/workoutProgress');
-                              const weekId = (await import('../firebase/plans')).default.getWeekId(now);
-                              const progressId = makeProgressId(currentUser.uid, weekId, dayNumber);
-                              const updated = await toggleExerciseCompletion(duelId, progressId, ex.id, e.target.checked);
-                              setTodayProgress(updated);
-                            } catch (err) {
-                              console.error('Could not toggle exercise', err);
-                            }
-                          }} />
-                          <span>{ex.name} — {ex.sets} x {ex.reps ?? (ex.durationSeconds ? `${ex.durationSeconds}s` : '')}</span>
-                        </label>
-                      );
-                    })}
-
-                    {/* progress summary */}
-                    <div className="mt-2 text-on-surface-variant text-sm">
-                      {todayProgress ? (
-                        <div>
-                          <div>{todayProgress.completedCount} de {todayProgress.totalCount} ejercicios</div>
-                          <div>{todayProgress.completionRate}% completado {todayProgress.completionRate >= 80 ? '✅ Entrenamiento completado' : ''}</div>
-                        </div>
-                      ) : (
-                        <div>Progreso no iniciado</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            ) : (
-              <p className="text-on-surface-variant text-sm">Cargando plan semanal...</p>
-            )}
-          </div>
 
           <h3 className="font-label-md text-on-surface uppercase tracking-widest text-xs mb-4">Actividad reciente</h3>
           {workouts.length === 0 ? (

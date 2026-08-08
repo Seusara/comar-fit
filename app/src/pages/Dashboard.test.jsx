@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
@@ -6,10 +7,17 @@ import Dashboard from './Dashboard';
 import { useActiveDuel } from '../hooks/useActiveDuel';
 import { useDuelWorkouts } from '../hooks/useDuelWorkouts';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  getWeekId,
+  generatePlanIfMissing,
+  getPlan,
+} from '../firebase/plans';
 
 vi.mock('../hooks/useActiveDuel');
 vi.mock('../hooks/useDuelWorkouts');
 vi.mock('../contexts/AuthContext');
+vi.mock('../firebase/plans');
+vi.mock('../firebase/workoutProgress');
 
 // Wednesday of the duel week, so "Día X de 7" and the countdown are
 // deterministic regardless of when the suite actually runs.
@@ -39,6 +47,18 @@ const DEFAULT_WORKOUTS = {
   error: null,
 };
 
+const WORKOUT_PLAN = {
+  days: {
+    1: { type: 'rest' },
+    2: { type: 'workout', focus: 'back_biceps', exercises: [] },
+    3: { type: 'workout', focus: 'chest_triceps', exercises: [{ id: 'pushups', name: 'Flexiones' }] },
+    4: { type: 'rest' },
+    5: { type: 'run', target: { distanceMeters: 2000, durationSeconds: 1200 } },
+    6: { type: 'rest' },
+    7: { type: 'rest' },
+  },
+};
+
 function renderDashboard() {
   return render(
     <MemoryRouter>
@@ -55,6 +75,9 @@ describe('Dashboard', () => {
     useActiveDuel.mockReturnValue(DEFAULT_DUEL);
     useDuelWorkouts.mockReturnValue(DEFAULT_WORKOUTS);
     useAuth.mockReturnValue({ currentUser: { uid: 'aaron' }, authLoading: false });
+    getWeekId.mockReturnValue('2026-W31');
+    generatePlanIfMissing.mockResolvedValue(WORKOUT_PLAN);
+    getPlan.mockReturnValue(new Promise(() => {}));
   });
 
   afterEach(() => {
@@ -87,6 +110,30 @@ describe('Dashboard', () => {
     );
 
     expect(screen.getByRole('heading', { name: /día 3 de 7/i })).toBeInTheDocument();
+  });
+
+  it('places the weekly plan before the duel comparison', async () => {
+    renderDashboard();
+
+    const weekly = await screen.findByRole('heading', { name: /tu semana/i });
+    const duel = screen.getByText(/vas adelante|van iguales|tu rival va adelante/i);
+
+    expect(weekly.compareDocumentPosition(duel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps duel content visible and retries a failed plan load', async () => {
+    getPlan.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(WORKOUT_PLAN);
+    useDuelWorkouts.mockReturnValue({ workouts: [], loading: false, error: null });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    renderDashboard();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/no pudimos cargar tu semana/i);
+    expect(screen.getByText(/van iguales/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /reintentar/i }));
+
+    expect(await screen.findByText(/pecho \+ tríceps/i)).toBeInTheDocument();
   });
 
   it('shows an error message when a hook reports an error', () => {
