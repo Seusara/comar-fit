@@ -10,3 +10,5 @@ firestore-debug.log
 ui-debug.log
 emulator-*.log
 firebase-export-*
+.worktrees/
+.superpowers/
