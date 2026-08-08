@@ -30,6 +30,7 @@ vi.mock('../firebase/runSessions');
 const NOW = new Date('2026-07-29T12:00:00Z');
 const WEEK_START = new Date('2026-07-27T00:00:00.000Z'); // Monday, UTC
 const WEEK_END = new Date('2026-08-02T23:59:59.999Z'); // Sunday, UTC
+const INITIAL_VIEWPORT_WIDTH = window.innerWidth;
 
 const DEFAULT_DUEL = {
   duel: {
@@ -85,6 +86,11 @@ function renderDashboard() {
   );
 }
 
+function setViewportWidth(width) {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: width, writable: true });
+  window.dispatchEvent(new Event('resize'));
+}
+
 describe('Dashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -100,6 +106,7 @@ describe('Dashboard', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    setViewportWidth(INITIAL_VIEWPORT_WIDTH);
   });
 
   it('shows a loading indicator while any hook is still loading', () => {
@@ -138,6 +145,32 @@ describe('Dashboard', () => {
 
     expect(weekly.compareDocumentPosition(duel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+
+  it.each([390, 1280])(
+    'keeps the weekly Dashboard content and controls accessible at %i px',
+    async (viewportWidth) => {
+      setViewportWidth(viewportWidth);
+      getPlan.mockResolvedValue(WORKOUT_PLAN);
+
+      renderDashboard();
+
+      const weekDays = await screen.findAllByTestId('week-day');
+      expect(weekDays).toHaveLength(7);
+      expect(weekDays.filter((day) => day.dataset.current === 'true')).toHaveLength(1);
+      expect(screen.getByRole('heading', { name: /pecho \+ tríceps/i })).toBeInTheDocument();
+
+      const exercise = screen.getByRole('checkbox', { name: 'Flexiones' });
+      const upload = screen.getByRole('button', { name: /subir entrenamiento/i });
+      const homeNavigation = screen.getByRole('link', { name: 'Inicio' });
+
+      exercise.focus();
+      expect(exercise).toHaveFocus();
+      upload.focus();
+      expect(upload).toHaveFocus();
+      homeNavigation.focus();
+      expect(homeNavigation).toHaveFocus();
+    },
+  );
 
   it('keeps duel content visible and retries a failed plan load', async () => {
     getPlan.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(WORKOUT_PLAN);
