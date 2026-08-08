@@ -262,7 +262,6 @@ function Dashboard() {
             Actividad reciente
           </h2>
 
-          <h3 className="font-label-md text-on-surface uppercase tracking-widest text-xs mb-4">Actividad reciente</h3>
           {workouts.length === 0 ? (
             <p className="text-on-surface-variant text-sm">
               Aún no hay actividad. ¡Sube tu primer entrenamiento para empezar el duelo!

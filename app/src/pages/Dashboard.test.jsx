@@ -276,6 +276,12 @@ describe('Dashboard', () => {
     expect(screen.getAllByText('2026-07-29')).not.toHaveLength(0);
   });
 
+  it('renders one visible heading for recent activity', () => {
+    renderDashboard();
+
+    expect(screen.getAllByRole('heading', { name: /actividad reciente/i })).toHaveLength(1);
+  });
+
   it('renders the activity date from a Firestore-style performedAt Timestamp', () => {
     useDuelWorkouts.mockReturnValue({
       workouts: [
