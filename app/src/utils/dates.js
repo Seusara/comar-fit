@@ -61,18 +61,48 @@ export function resolvePerformedAt(workout) {
   return toDate(workout?.performedAt ?? workout?.date);
 }
 
-const dayKeyFormatter = new Intl.DateTimeFormat('en-CA', {
-  timeZone: DUEL_TIME_ZONE,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-});
+const dayKeyFormatters = new Map();
+
+function dayKeyFormatterFor(timeZone) {
+  if (!dayKeyFormatters.has(timeZone)) {
+    dayKeyFormatters.set(timeZone, new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }));
+  }
+  return dayKeyFormatters.get(timeZone);
+}
 
 /** `YYYY-MM-DD` calendar day of an instant, in the duel's timezone. */
-export function formatDayKey(value) {
+export function formatDayKey(value, timeZone = DUEL_TIME_ZONE) {
   const date = toDate(value);
   if (!date) return '';
-  return dayKeyFormatter.format(date);
+  return dayKeyFormatterFor(timeZone).format(date);
+}
+
+/**
+ * Plan week identity and weekday derived from one calendar date in the duel
+ * timezone. This keeps both values on the same side of local day/week
+ * rollovers even when the browser or JavaScript runtime uses another zone.
+ */
+export function getDuelWeekContext(value = new Date(), timeZone = DUEL_TIME_ZONE) {
+  const dayKey = formatDayKey(value, timeZone);
+  if (!dayKey) return { weekId: null, isoWeekday: 1, timeZone };
+
+  const calendarDate = new Date(`${dayKey}T12:00:00.000Z`);
+  const isoWeekday = calendarDate.getUTCDay() || 7;
+  const thursday = new Date(calendarDate);
+  thursday.setUTCDate(calendarDate.getUTCDate() + 4 - isoWeekday);
+  const yearStart = new Date(Date.UTC(thursday.getUTCFullYear(), 0, 1));
+  const weekNumber = Math.ceil((((thursday - yearStart) / DAY_MS) + 1) / 7);
+
+  return {
+    weekId: `${thursday.getUTCFullYear()}-W${String(weekNumber).padStart(2, '0')}`,
+    isoWeekday,
+    timeZone,
+  };
 }
 
 /** Display string for a workout's performed date (empty when unknown). */

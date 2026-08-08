@@ -5,6 +5,7 @@ import {
   duelDayNumber,
   endOfCurrentDuelDay,
   formatWorkoutDate,
+  getDuelWeekContext,
   isInDuelWeek,
   resolveDuelWeek,
   resolvePerformedAt,
@@ -53,6 +54,27 @@ describe('resolvePerformedAt / formatWorkoutDate', () => {
     expect(formatWorkoutDate({ performedAt: timestamp('2026-07-29T18:00:00Z') })).toBe('2026-07-29');
     expect(formatWorkoutDate({ date: '2026-07-29' })).toBe('2026-07-29');
     expect(formatWorkoutDate({})).toBe('');
+  });
+});
+
+describe('getDuelWeekContext', () => {
+  it('derives Friday and its ISO week from the same Mexico City calendar date', () => {
+    expect(getDuelWeekContext(new Date('2026-08-08T00:30:00.000Z'))).toEqual({
+      weekId: '2026-W32',
+      isoWeekday: 5,
+      timeZone: 'America/Mexico_City',
+    });
+  });
+
+  it('rolls the weekday and week ID together at Mexico City Monday midnight', () => {
+    expect(getDuelWeekContext(new Date('2026-08-10T05:59:59.999Z'))).toMatchObject({
+      weekId: '2026-W32',
+      isoWeekday: 7,
+    });
+    expect(getDuelWeekContext(new Date('2026-08-10T06:00:00.000Z'))).toMatchObject({
+      weekId: '2026-W33',
+      isoWeekday: 1,
+    });
   });
 });
 

@@ -10,12 +10,25 @@ const FOCUS_LABELS = {
   upper_body: 'Tren superior',
 };
 
+const STATUS_ICONS = {
+  Descanso: '—',
+  Planeado: '○',
+  'En curso': '▶',
+  Pendiente: '!',
+  Parcial: '◐',
+  Completado: '✓',
+  Hoy: '●',
+};
+
 function dayStatus(dayNumber, dayPlan, currentDay, progress, runSession) {
   if (dayPlan.type === 'rest') return 'Descanso';
   if (dayNumber > currentDay) return 'Planeado';
-  if (dayPlan.type === 'run') return runSession?.status === 'active' ? 'En curso' : 'Pendiente';
+  if (dayPlan.type === 'run') {
+    if (runSession?.status === 'completed') return 'Completado';
+    return runSession?.status === 'active' ? 'En curso' : 'Pendiente';
+  }
   if (dayNumber === currentDay && progress) {
-    return progress.status === 'completed'
+    return progress.completionRate >= 80 || progress.status === 'completed'
       ? 'Completado'
       : progress.status === 'partial'
         ? 'Parcial'
@@ -49,6 +62,18 @@ function getDayTitle(dayPlan) {
   return FOCUS_LABELS[dayPlan.focus] ?? dayPlan.focus ?? 'Entrenamiento';
 }
 
+function formatExerciseDosage(exercise) {
+  if (!Number.isFinite(exercise?.sets)) return null;
+  const series = `${exercise.sets} ${exercise.sets === 1 ? 'serie' : 'series'}`;
+  if (Number.isFinite(exercise.reps)) {
+    return `${series} × ${exercise.reps} ${exercise.reps === 1 ? 'repetición' : 'repeticiones'}`;
+  }
+  if (Number.isFinite(exercise.durationSeconds)) {
+    return `${series} × ${exercise.durationSeconds} ${exercise.durationSeconds === 1 ? 'segundo' : 'segundos'}`;
+  }
+  return null;
+}
+
 function WorkoutDetails({ dayPlan, progress, actionPending, onToggleExercise }) {
   const planExercises = Array.isArray(dayPlan.exercises) ? dayPlan.exercises : [];
   const progressExercises = Array.isArray(progress?.exercises) ? progress.exercises : [];
@@ -75,6 +100,7 @@ function WorkoutDetails({ dayPlan, progress, actionPending, onToggleExercise }) 
             const progressExercise = progressById.get(exercise.id);
             const completed = progressExercise?.completed ?? !!exercise.completed;
             const exerciseId = exercise.id ?? exercise.name ?? `exercise-${index}`;
+            const dosage = formatExerciseDosage({ ...exercise, ...progressExercise });
             return (
               <li key={exerciseId}>
                 <label className="flex items-center gap-3 text-sm text-on-surface-variant">
@@ -84,7 +110,10 @@ function WorkoutDetails({ dayPlan, progress, actionPending, onToggleExercise }) 
                     disabled={actionPending}
                     onChange={(event) => onToggleExercise?.(exerciseId, event.target.checked)}
                   />
-                  <span>{exercise.name ?? 'Ejercicio'}</span>
+                  <span className="min-w-0">
+                    <span className="block">{exercise.name ?? 'Ejercicio'}</span>
+                    {dosage && <span className="block text-xs">{dosage}</span>}
+                  </span>
                 </label>
               </li>
             );
@@ -205,7 +234,15 @@ function WeeklyPlanCard({
                       <span className="truncate text-sm font-bold text-on-surface">{getDayTitle(dayPlan)}</span>
                     )}
                   </div>
-                  <span className="shrink-0 text-xs font-bold text-on-surface-variant">{status}</span>
+                  <span
+                    className="flex shrink-0 items-center gap-1.5 text-xs font-bold text-on-surface-variant"
+                    data-testid="day-status"
+                  >
+                    <span aria-hidden="true" data-testid="day-status-icon">
+                      {STATUS_ICONS[status] ?? '•'}
+                    </span>
+                    <span>{status}</span>
+                  </span>
                 </div>
                 {isCurrent && (
                   <ExpandedDay

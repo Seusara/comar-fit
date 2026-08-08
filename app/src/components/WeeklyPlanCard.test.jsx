@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import WeeklyPlanCard from './WeeklyPlanCard';
@@ -9,8 +9,8 @@ const WORKOUT_PLAN = {
       type: 'workout',
       focus: 'chest_triceps',
       exercises: [
-        { id: 'bench', name: 'Press de banca' },
-        { id: 'pushup', name: 'Flexiones' },
+        { id: 'bench', name: 'Press de banca', type: 'reps', sets: 3, reps: 8 },
+        { id: 'pushup', name: 'Flexiones', type: 'duration', sets: 4, durationSeconds: 45 },
         { id: 'dip', name: 'Fondos' },
         { id: 'extension', name: 'Extensión de tríceps' },
       ],
@@ -35,6 +35,33 @@ const PARTIAL_PROGRESS = {
     { id: 'dip', name: 'Fondos', completed: false },
     { id: 'extension', name: 'Extensión de tríceps', completed: false },
   ],
+};
+
+const COMPLETED_AT_THRESHOLD = {
+  status: 'partial',
+  completedCount: 4,
+  totalCount: 5,
+  completionRate: 80,
+  exercises: [
+    { id: 'bench', name: 'Press de banca', completed: true },
+    { id: 'pushup', name: 'Flexiones', completed: true },
+    { id: 'dip', name: 'Fondos', completed: true },
+    { id: 'extension', name: 'Extensión de tríceps', completed: true },
+    { id: 'fly', name: 'Aperturas', completed: false },
+  ],
+};
+
+const THRESHOLD_PLAN = {
+  days: {
+    ...WORKOUT_PLAN.days,
+    '1': {
+      ...WORKOUT_PLAN.days['1'],
+      exercises: [
+        ...WORKOUT_PLAN.days['1'].exercises,
+        { id: 'fly', name: 'Aperturas', type: 'reps', sets: 3, reps: 10 },
+      ],
+    },
+  },
 };
 
 const RUN_PLAN = {
@@ -68,6 +95,44 @@ describe('WeeklyPlanCard', () => {
     expect(screen.getAllByTestId('week-day')).toHaveLength(7);
     expect(screen.getByText(/pecho \+ tríceps/i)).toBeInTheDocument();
     expect(screen.getByText('50% completado')).toBeInTheDocument();
+  });
+
+  it('renders sets and repetitions for a repetition exercise', () => {
+    render(<WeeklyPlanCard plan={WORKOUT_PLAN} currentDay={1} progress={PARTIAL_PROGRESS} />);
+
+    expect(screen.getByText('3 series × 8 repeticiones')).toBeInTheDocument();
+  });
+
+  it('renders sets and seconds for a duration exercise', () => {
+    render(<WeeklyPlanCard plan={WORKOUT_PLAN} currentDay={1} progress={PARTIAL_PROGRESS} />);
+
+    expect(screen.getByText('4 series × 45 segundos')).toBeInTheDocument();
+  });
+
+  it('renders the completed state at the 80 percent threshold', () => {
+    render(
+      <WeeklyPlanCard
+        plan={THRESHOLD_PLAN}
+        currentDay={1}
+        progress={COMPLETED_AT_THRESHOLD}
+      />,
+    );
+
+    const currentRow = screen.getAllByTestId('week-day').find(
+      (row) => row.getAttribute('data-current') === 'true',
+    );
+    expect(within(currentRow).getByText('Completado')).toBeInTheDocument();
+    expect(within(currentRow).getByText('80% completado')).toBeInTheDocument();
+  });
+
+  it('shows a visible status icon with status text on every row', () => {
+    render(<WeeklyPlanCard plan={WORKOUT_PLAN} currentDay={1} progress={PARTIAL_PROGRESS} />);
+
+    for (const row of screen.getAllByTestId('week-day')) {
+      expect(within(row).getByTestId('day-status-icon')).toBeVisible();
+      expect(within(row).getByTestId('day-status-icon')).toHaveAttribute('aria-hidden', 'true');
+      expect(within(row).getByTestId('day-status')).not.toHaveTextContent(/^\s*$/);
+    }
   });
 
   it('renders the current run target and starts it', async () => {

@@ -9,7 +9,7 @@ import {
   endOfMexicoCityDay,
   weekDayNumber,
 } from '../duel/weeklyHistory';
-import { formatWorkoutDate } from '../utils/dates';
+import { DUEL_TIME_ZONE, formatWorkoutDate, getDuelWeekContext } from '../utils/dates';
 import Layout from '../components/Layout';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -18,7 +18,7 @@ import ProgressRing from '../components/ProgressRing';
 import StreakBadge from '../components/StreakBadge';
 import CountdownTimer from '../components/CountdownTimer';
 import WeeklyPlanCard from '../components/WeeklyPlanCard';
-import { getWeekId, generatePlanIfMissing, getPlan } from '../firebase/plans';
+import { generatePlanIfMissing, getPlan } from '../firebase/plans';
 import {
   getOrCreateWorkoutProgress,
   toggleExerciseCompletion,
@@ -67,12 +67,13 @@ function Dashboard() {
   const loading = duelLoading || workoutsLoading;
   const error = duelError || workoutsError || null;
   const now = React.useMemo(() => new Date(), []);
-  const weekId = React.useMemo(() => getWeekId(now), [now]);
-  const currentDay = React.useMemo(() => {
-    const day = now.getUTCDay();
-    return day === 0 ? 7 : day;
-  }, [now]);
-  const profileGender = duel?.participantProfiles?.[currentUser?.uid]?.gender
+  const duelTimeZone = duel?.timezone ?? DUEL_TIME_ZONE;
+  const { weekId, isoWeekday: currentDay } = React.useMemo(
+    () => getDuelWeekContext(now, duelTimeZone),
+    [duelTimeZone, now],
+  );
+  const profileGender = duel?.scoringSnapshot?.users?.[currentUser?.uid]?.gender
+    ?? duel?.participantProfiles?.[currentUser?.uid]?.gender
     ?? currentUser?.gender
     ?? 'M';
 
@@ -82,27 +83,29 @@ function Dashboard() {
   const [planLoading, setPlanLoading] = React.useState(false);
   const [planError, setPlanError] = React.useState(null);
   const [actionPending, setActionPending] = React.useState(false);
-  const mountedRef = React.useRef(false);
+  const planRequestRef = React.useRef(0);
 
   const loadWeeklyPlan = React.useCallback(async () => {
     if (!duelId || !currentUser?.uid) return;
+    const requestId = ++planRequestRef.current;
+    const isCurrentRequest = () => planRequestRef.current === requestId;
 
-    if (mountedRef.current) {
-      setPlanLoading(true);
-      setPlanError(null);
-    }
+    setPlanLoading(true);
+    setPlanError(null);
 
     try {
       const profile = { gender: profileGender };
       await generatePlanIfMissing(duelId, currentUser.uid, weekId, profile);
+      if (!isCurrentRequest()) return;
+
       const plan = await getPlan(duelId, currentUser.uid, weekId);
+      if (!isCurrentRequest()) return;
+
       const today = plan?.days?.[String(currentDay)] ?? null;
 
-      if (mountedRef.current) {
-        if (today?.type !== 'run') setWeeklyPlan(plan);
-        setTodayProgress(null);
-        setRunSession(null);
-      }
+      setWeeklyPlan(plan);
+      setTodayProgress(null);
+      setRunSession(null);
 
       if (today?.type === 'workout') {
         const progress = await getOrCreateWorkoutProgress(
@@ -112,7 +115,7 @@ function Dashboard() {
           currentDay,
           today,
         );
-        if (mountedRef.current) setTodayProgress(progress);
+        if (isCurrentRequest()) setTodayProgress(progress);
       }
 
       if (today?.type === 'run') {
@@ -124,54 +127,63 @@ function Dashboard() {
           currentDay,
           today,
         );
-        if (mountedRef.current) {
+        if (isCurrentRequest()) {
           setRunSession({ ...session, runId });
-          setWeeklyPlan(plan);
         }
       }
     } catch (err) {
-      if (mountedRef.current) setPlanError('No pudimos cargar tu semana.');
+      if (isCurrentRequest()) setPlanError('No pudimos cargar tu semana.');
     } finally {
-      if (mountedRef.current) setPlanLoading(false);
+      if (isCurrentRequest()) setPlanLoading(false);
     }
   }, [currentDay, currentUser?.uid, duelId, profileGender, weekId]);
 
   React.useEffect(() => {
-    mountedRef.current = true;
+    planRequestRef.current += 1;
+    setWeeklyPlan(null);
+    setTodayProgress(null);
+    setRunSession(null);
+    setPlanError(null);
+    setPlanLoading(Boolean(duelId && currentUser?.uid));
+    setActionPending(false);
     loadWeeklyPlan();
     return () => {
-      mountedRef.current = false;
+      planRequestRef.current += 1;
     };
-  }, [loadWeeklyPlan]);
+  }, [currentUser?.uid, duelId, loadWeeklyPlan]);
 
   const handleToggleExercise = React.useCallback(async (exerciseId, completed) => {
     if (!duelId || !currentUser?.uid) return;
+    const requestId = planRequestRef.current;
 
     setActionPending(true);
     setPlanError(null);
     try {
       const progressId = makeProgressId(currentUser.uid, weekId, currentDay);
       const updated = await toggleExerciseCompletion(duelId, progressId, exerciseId, completed);
-      if (mountedRef.current) setTodayProgress(updated);
+      if (planRequestRef.current === requestId) setTodayProgress(updated);
     } catch (err) {
-      if (mountedRef.current) setPlanError('No pudimos actualizar tu progreso.');
+      if (planRequestRef.current === requestId) {
+        setPlanError('No pudimos actualizar tu progreso.');
+      }
     } finally {
-      if (mountedRef.current) setActionPending(false);
+      if (planRequestRef.current === requestId) setActionPending(false);
     }
   }, [currentDay, currentUser?.uid, duelId, weekId]);
 
   const handleStartRun = React.useCallback(async () => {
     if (!duelId || !runSession?.runId) return;
+    const requestId = planRequestRef.current;
 
     setActionPending(true);
     setPlanError(null);
     try {
       const updated = await startRunSession(duelId, runSession.runId);
-      if (mountedRef.current) setRunSession(updated);
+      if (planRequestRef.current === requestId) setRunSession(updated);
     } catch (err) {
-      if (mountedRef.current) setPlanError('No pudimos iniciar la carrera.');
+      if (planRequestRef.current === requestId) setPlanError('No pudimos iniciar la carrera.');
     } finally {
-      if (mountedRef.current) setActionPending(false);
+      if (planRequestRef.current === requestId) setActionPending(false);
     }
   }, [duelId, runSession?.runId]);
 

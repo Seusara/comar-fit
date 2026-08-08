@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -8,7 +8,6 @@ import { useActiveDuel } from '../hooks/useActiveDuel';
 import { useDuelWorkouts } from '../hooks/useDuelWorkouts';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  getWeekId,
   generatePlanIfMissing,
   getPlan,
 } from '../firebase/plans';
@@ -17,6 +16,11 @@ import {
   makeRunId,
   startRunSession,
 } from '../firebase/runSessions';
+import {
+  getOrCreateWorkoutProgress,
+  makeProgressId,
+  toggleExerciseCompletion,
+} from '../firebase/workoutProgress';
 
 vi.mock('../hooks/useActiveDuel');
 vi.mock('../hooks/useDuelWorkouts');
@@ -38,6 +42,7 @@ const DEFAULT_DUEL = {
     userB_uid: 'alexandra',
     weekStartDate: WEEK_START,
     weekEndDate: WEEK_END,
+    timezone: 'America/Mexico_City',
   },
   loading: false,
   error: null,
@@ -77,6 +82,45 @@ const RUN_PLAN = {
   },
 };
 
+const PENDING_WORKOUT_PROGRESS = {
+  progressId: 'aaron_2026-W31_d3',
+  status: 'pending',
+  completedCount: 0,
+  totalCount: 1,
+  completionRate: 0,
+  exercises: [{ id: 'pushups', name: 'Flexiones', completed: false }],
+};
+
+const COMPLETED_WORKOUT_PROGRESS = {
+  ...PENDING_WORKOUT_PROGRESS,
+  status: 'completed',
+  completedCount: 1,
+  completionRate: 100,
+  exercises: [{ id: 'pushups', name: 'Flexiones', completed: true }],
+};
+
+function workoutPlanForFocus(focus) {
+  return {
+    days: {
+      1: { type: 'rest' },
+      2: { type: 'rest' },
+      3: { type: 'workout', focus, exercises: [] },
+      4: { type: 'rest' },
+      5: { type: 'rest' },
+      6: { type: 'rest' },
+      7: { type: 'rest' },
+    },
+  };
+}
+
+function deferred() {
+  let resolve;
+  const promise = new Promise((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
+
 function renderDashboard() {
   return render(
     <MemoryRouter>
@@ -93,7 +137,6 @@ describe('Dashboard', () => {
     useActiveDuel.mockReturnValue(DEFAULT_DUEL);
     useDuelWorkouts.mockReturnValue(DEFAULT_WORKOUTS);
     useAuth.mockReturnValue({ currentUser: { uid: 'aaron' }, authLoading: false });
-    getWeekId.mockReturnValue('2026-W31');
     generatePlanIfMissing.mockResolvedValue(WORKOUT_PLAN);
     getPlan.mockReturnValue(new Promise(() => {}));
   });
@@ -154,9 +197,159 @@ describe('Dashboard', () => {
     expect(await screen.findByText(/pecho \+ tríceps/i)).toBeInTheDocument();
   });
 
+  it('generates a female first-visit plan from the duel scoring snapshot', async () => {
+    useActiveDuel.mockReturnValue({
+      ...DEFAULT_DUEL,
+      duel: {
+        ...DEFAULT_DUEL.duel,
+        scoringSnapshot: {
+          users: {
+            aaron: { gender: 'F', weightKg: 62 },
+            alexandra: { gender: 'M', weightKg: 80 },
+          },
+        },
+      },
+    });
+    getPlan.mockResolvedValue(WORKOUT_PLAN);
+
+    renderDashboard();
+
+    await waitFor(() => {
+      expect(generatePlanIfMissing).toHaveBeenCalledWith(
+        'duel-1',
+        'aaron',
+        '2026-W31',
+        { gender: 'F' },
+      );
+    });
+  });
+
+  it('uses the Mexico City Friday for both plan week and day at 00:30Z', async () => {
+    vi.setSystemTime(new Date('2026-08-08T00:30:00.000Z'));
+    getPlan.mockResolvedValue(WORKOUT_PLAN);
+    makeRunId.mockReturnValue('aaron_2026-W32_d5');
+    getOrCreateRunSession.mockResolvedValue({ status: 'pending' });
+
+    renderDashboard();
+
+    await waitFor(() => {
+      expect(generatePlanIfMissing).toHaveBeenCalledWith(
+        'duel-1',
+        'aaron',
+        '2026-W32',
+        { gender: 'M' },
+      );
+      expect(getOrCreateRunSession).toHaveBeenCalledWith(
+        'duel-1',
+        'aaron',
+        '2026-W32',
+        5,
+        WORKOUT_PLAN.days[5],
+      );
+    });
+  });
+
+  it('resets weekly state and ignores a stale response after identity rerenders', async () => {
+    let activeDuel = DEFAULT_DUEL;
+    let activeUser = { currentUser: { uid: 'aaron' }, authLoading: false };
+    const abandonedPlan = deferred();
+    const firstPlan = workoutPlanForFocus('chest_triceps');
+    const stalePlan = workoutPlanForFocus('legs');
+    const currentPlan = workoutPlanForFocus('back_biceps');
+
+    useActiveDuel.mockImplementation(() => activeDuel);
+    useAuth.mockImplementation(() => activeUser);
+    getPlan.mockImplementation((duelId) => {
+      if (duelId === 'duel-1') return Promise.resolve(firstPlan);
+      if (duelId === 'duel-2') return abandonedPlan.promise;
+      return Promise.resolve(currentPlan);
+    });
+
+    const view = renderDashboard();
+    expect(await screen.findByText(/pecho \+ tríceps/i)).toBeInTheDocument();
+
+    activeDuel = {
+      ...DEFAULT_DUEL,
+      duel: { ...DEFAULT_DUEL.duel, duelId: 'duel-2' },
+    };
+    activeUser = { currentUser: { uid: 'beatriz' }, authLoading: false };
+    view.rerender(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Preparando tu semana…')).toBeInTheDocument();
+    expect(screen.queryByText(/pecho \+ tríceps/i)).not.toBeInTheDocument();
+    await waitFor(() => expect(getPlan).toHaveBeenCalledWith('duel-2', 'beatriz', '2026-W31'));
+
+    activeDuel = {
+      ...DEFAULT_DUEL,
+      duel: { ...DEFAULT_DUEL.duel, duelId: 'duel-3' },
+    };
+    activeUser = { currentUser: { uid: 'carla' }, authLoading: false };
+    view.rerender(
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText(/espalda \+ bíceps/i)).toBeInTheDocument();
+
+    await act(async () => {
+      abandonedPlan.resolve(stalePlan);
+      await abandonedPlan.promise;
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/espalda \+ bíceps/i)).toBeInTheDocument();
+      expect(screen.queryByText(/^piernas$/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it('persists an exercise toggle and renders the confirmed progress', async () => {
+    getPlan.mockResolvedValue(WORKOUT_PLAN);
+    getOrCreateWorkoutProgress.mockResolvedValue(PENDING_WORKOUT_PROGRESS);
+    makeProgressId.mockReturnValue('aaron_2026-W31_d3');
+    toggleExerciseCompletion.mockResolvedValue(COMPLETED_WORKOUT_PROGRESS);
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    renderDashboard();
+
+    await user.click(await screen.findByRole('checkbox', { name: 'Flexiones' }));
+
+    expect(makeProgressId).toHaveBeenCalledWith('aaron', '2026-W31', 3);
+    expect(toggleExerciseCompletion).toHaveBeenCalledWith(
+      'duel-1',
+      'aaron_2026-W31_d3',
+      'pushups',
+      true,
+    );
+    expect(await screen.findByText('100% completado')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Flexiones' })).toBeChecked();
+  });
+
+  it('retains confirmed exercise progress when a toggle fails', async () => {
+    getPlan.mockResolvedValue(WORKOUT_PLAN);
+    getOrCreateWorkoutProgress.mockResolvedValue(PENDING_WORKOUT_PROGRESS);
+    makeProgressId.mockReturnValue('aaron_2026-W31_d3');
+    toggleExerciseCompletion.mockRejectedValue(new Error('offline'));
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    renderDashboard();
+
+    const checkbox = await screen.findByRole('checkbox', { name: 'Flexiones' });
+    await user.click(checkbox);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /no pudimos actualizar tu progreso/i,
+    );
+    expect(screen.getByRole('checkbox', { name: 'Flexiones' })).not.toBeChecked();
+    expect(screen.getByText('0% completado')).toBeInTheDocument();
+  });
+
   it('creates and starts the current run session', async () => {
     vi.setSystemTime(new Date('2026-08-08T12:00:00Z'));
-    getWeekId.mockReturnValue('2026-W32');
     getPlan.mockResolvedValue(RUN_PLAN);
     makeRunId.mockReturnValue('aaron_2026-W32_d6');
     getOrCreateRunSession.mockResolvedValue({ runId: 'aaron_2026-W32_d6', status: 'pending' });
@@ -180,7 +373,6 @@ describe('Dashboard', () => {
 
   it('disables run start while the session activation is in flight', async () => {
     vi.setSystemTime(new Date('2026-08-08T12:00:00Z'));
-    getWeekId.mockReturnValue('2026-W32');
     getPlan.mockResolvedValue(RUN_PLAN);
     makeRunId.mockReturnValue('aaron_2026-W32_d6');
     getOrCreateRunSession.mockResolvedValue({ runId: 'aaron_2026-W32_d6', status: 'pending' });
@@ -203,7 +395,6 @@ describe('Dashboard', () => {
 
   it('shows a recoverable error when starting the run session is rejected', async () => {
     vi.setSystemTime(new Date('2026-08-08T12:00:00Z'));
-    getWeekId.mockReturnValue('2026-W32');
     getPlan.mockResolvedValue(RUN_PLAN);
     makeRunId.mockReturnValue('aaron_2026-W32_d6');
     getOrCreateRunSession.mockResolvedValue({ runId: 'aaron_2026-W32_d6', status: 'pending' });
