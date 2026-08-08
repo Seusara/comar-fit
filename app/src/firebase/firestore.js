@@ -10,6 +10,10 @@ import {
   Timestamp,
   writeBatch,
   runTransaction,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  orderBy,
 } from 'firebase/firestore';
 import { db } from './config';
 import { canUpdatePhysicalProfile } from './profilePolicy';
@@ -212,3 +216,6 @@ export function computeWeekBoundaries(referenceDate) {
 
   return { weekStartDate, weekEndDate };
 }
+
+export { createWorkout, updateWorkout, deleteWorkout, subscribeToWorkouts, subscribeToDuelWeek } from './workouts';
+

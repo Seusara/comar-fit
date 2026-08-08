@@ -13,7 +13,7 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-const useEmulator = import.meta.env.DEV || import.meta.env.MODE === 'test';
+const useEmulator = import.meta.env.DEV || import.meta.env.MODE === 'test' || process.env.NODE_ENV === 'test' || process.env.FIREBASE_EMULATOR === '1';
 
 if (useEmulator && !globalThis.__FIREBASE_EMULATOR_CONNECTED__) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });

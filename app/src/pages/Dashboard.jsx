@@ -1,3 +1,4 @@
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveDuel } from '../hooks/useActiveDuel';
@@ -91,6 +92,47 @@ function Dashboard() {
     tied: 'Van iguales',
   }[comparison];
 
+  // Weekly plan: ensure a plan exists and read today's entry
+  const [todayPlan, setTodayPlan] = React.useState(null);
+  const [todayProgress, setTodayProgress] = React.useState(null);
+  React.useEffect(() => {
+    let mounted = true;
+    async function ensurePlan() {
+      if (!duelId || !currentUser) return;
+      const { default: plansModule } = await import('../firebase/plans');
+      const weekId = plansModule.getWeekId(now);
+      const profile = (duel?.participantProfiles || {})[currentUser.uid] || { gender: currentUser?.gender || 'M' };
+      try {
+        await plansModule.generatePlanIfMissing(duelId, currentUser.uid, weekId, profile);
+        const plan = await plansModule.getPlan(duelId, currentUser.uid, weekId);
+        const isoWeekday = String((new Date()).getUTCDay() === 0 ? 7 : (new Date()).getUTCDay());
+        const todays = plan?.days?.[isoWeekday] ?? null;
+        if (mounted) setTodayPlan(todays);
+
+        // Only create/load progress for workout days
+        if (todays && todays.type === 'workout') {
+          try {
+            const { makeProgressId, getOrCreateWorkoutProgress, getWorkoutProgress } = await import('../firebase/workoutProgress');
+            const progressId = makeProgressId(currentUser.uid, weekId, Number(isoWeekday));
+            // Create or get progress using the plan snapshot for this user
+            const progress = await getOrCreateWorkoutProgress(duelId, currentUser.uid, weekId, Number(isoWeekday), todays);
+            if (mounted) setTodayProgress(progress);
+          } catch (err) {
+            // if not a workout day or creation rejected, leave progress null
+            console.error('Could not ensure workout progress', err);
+          }
+        }
+
+      } catch (err) {
+        // swallow errors for now; UI will continue showing workouts
+        console.error('Could not ensure plan', err);
+      }
+    }
+    ensurePlan();
+    return () => { mounted = false; };
+  }, [duelId, currentUser, now]);
+
+
   // "Día X de 7" measured against the duel's real week start, not the local
   // browser's day-of-week.
   const dayNumber = weekDayNumber(now);
@@ -128,6 +170,63 @@ function Dashboard() {
           <h2 className="font-label-md text-on-surface uppercase tracking-widest text-xs mb-4">
             Actividad reciente
           </h2>
+
+          {/* Today's plan summary */}
+          <div className="mb-4">
+            {todayPlan ? (
+              todayPlan.type === 'rest' ? (
+                <p className="text-on-surface-variant text-sm">Hoy toca descansar</p>
+              ) : todayPlan.type === 'run' ? (
+                <div>
+                  <p className="text-on-surface font-body-md text-sm font-bold">Hoy toca carrera</p>
+                  <p className="text-on-surface-variant text-xs mt-0.5">Meta: {todayPlan.target.distanceMeters/1000} km o {Math.round(todayPlan.target.durationSeconds/60)} min</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-on-surface font-body-md text-sm font-bold">Hoy te toca: {todayPlan.focus.replace('_',' + ')}</p>
+                  <div className="mt-2">
+                    {todayPlan.exercises.map((ex) => {
+                      const progressEx = todayProgress?.exercises?.find((p) => p.id === ex.id);
+                      const completed = !!progressEx?.completed;
+                      return (
+                        <label key={ex.id} className="flex items-center gap-3 text-on-surface-variant text-sm">
+                          <input type="checkbox" checked={completed} onChange={async (e) => {
+                            // toggle via workoutProgress API
+                            try {
+                              const { toggleExerciseCompletion, makeProgressId } = await import('../firebase/workoutProgress');
+                              const weekId = (await import('../firebase/plans')).default.getWeekId(now);
+                              const progressId = makeProgressId(currentUser.uid, weekId, dayNumber);
+                              const updated = await toggleExerciseCompletion(duelId, progressId, ex.id, e.target.checked);
+                              setTodayProgress(updated);
+                            } catch (err) {
+                              console.error('Could not toggle exercise', err);
+                            }
+                          }} />
+                          <span>{ex.name} — {ex.sets} x {ex.reps ?? (ex.durationSeconds ? `${ex.durationSeconds}s` : '')}</span>
+                        </label>
+                      );
+                    })}
+
+                    {/* progress summary */}
+                    <div className="mt-2 text-on-surface-variant text-sm">
+                      {todayProgress ? (
+                        <div>
+                          <div>{todayProgress.completedCount} de {todayProgress.totalCount} ejercicios</div>
+                          <div>{todayProgress.completionRate}% completado {todayProgress.completionRate >= 80 ? '✅ Entrenamiento completado' : ''}</div>
+                        </div>
+                      ) : (
+                        <div>Progreso no iniciado</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            ) : (
+              <p className="text-on-surface-variant text-sm">Cargando plan semanal...</p>
+            )}
+          </div>
+
+          <h3 className="font-label-md text-on-surface uppercase tracking-widest text-xs mb-4">Actividad reciente</h3>
           {workouts.length === 0 ? (
             <p className="text-on-surface-variant text-sm">
               Aún no hay actividad. ¡Sube tu primer entrenamiento para empezar el duelo!
