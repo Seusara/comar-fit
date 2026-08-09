@@ -9,7 +9,9 @@ import { generatePlanIfMissing, getPlan } from '../firebase/plans';
 import {
   getOrCreateWorkoutProgress, makeProgressId, subscribeToWorkoutProgress, toggleExerciseCompletion,
 } from '../firebase/workoutProgress';
-import { getOrCreateRunSession, makeRunId, startRunSession } from '../firebase/runSessions';
+import {
+  completeRunSession, getOrCreateRunSession, makeRunId, startRunSession, subscribeToRunSession,
+} from '../firebase/runSessions';
 
 vi.mock('../contexts/AuthContext');
 vi.mock('../hooks/useActiveDuel');
@@ -61,6 +63,7 @@ describe('Rutina semanal', () => {
     getOrCreateWorkoutProgress.mockResolvedValue(pendingProgress);
     makeProgressId.mockImplementation((uid, week, day) => `${uid}_${week}_d${day}`);
     makeRunId.mockImplementation((uid, week, day) => `${uid}_${week}_d${day}`);
+    subscribeToRunSession.mockReturnValue(vi.fn());
     subscribeToWorkoutProgress.mockImplementation((_duelId, _progressId, onData) => {
       onData(pendingProgress);
       return vi.fn();
@@ -121,5 +124,21 @@ describe('Rutina semanal', () => {
     expect(startRunSession).toHaveBeenCalledWith('duel-1', 'aaron_2026-W32_d1');
     expect(await screen.findByText('Carrera en curso')).toBeInTheDocument();
     expect(screen.getByText(/GPS todavía no está disponible/i)).toBeInTheDocument();
+  });
+
+  it('finaliza una carrera activa con métricas manuales', async () => {
+    const user = userEvent.setup();
+    const runDay = { type: 'run', target: { distanceMeters: 2000, durationSeconds: 1200 } };
+    getPlan.mockResolvedValue({ days: { 1: runDay } });
+    getOrCreateRunSession.mockResolvedValue({ status: 'active' });
+    completeRunSession.mockResolvedValue({ status: 'completed', distanceMeters: 2500, durationSeconds: 1500 });
+    renderRoutine();
+    await user.clear(await screen.findByRole('spinbutton', { name: 'Distancia en kilómetros' }));
+    await user.type(screen.getByRole('spinbutton', { name: 'Distancia en kilómetros' }), '2.5');
+    await user.clear(screen.getByRole('spinbutton', { name: 'Duración en minutos' }));
+    await user.type(screen.getByRole('spinbutton', { name: 'Duración en minutos' }), '25');
+    await user.click(screen.getByRole('button', { name: 'Finalizar carrera' }));
+    expect(completeRunSession).toHaveBeenCalledWith('duel-1', 'aaron_2026-W32_d1', 2500, 1500);
+    expect(await screen.findByText('Carrera completada')).toBeInTheDocument();
   });
 });

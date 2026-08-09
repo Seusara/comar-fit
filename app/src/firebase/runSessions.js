@@ -1,4 +1,4 @@
-import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 
 export function makeRunId(userId, weekId, isoWeekday) {
@@ -71,5 +71,37 @@ export async function startRunSession(duelId, runId) {
     tx.set(ref, payload);
     return { runId: snap.id, ...payload };
   });
+}
+
+export async function completeRunSession(duelId, runId, distanceMeters, durationSeconds) {
+  if (!Number.isInteger(distanceMeters) || distanceMeters <= 0
+    || !Number.isInteger(durationSeconds) || durationSeconds <= 0) {
+    throw new Error('INVALID_RUN_METRICS');
+  }
+  const ref = runDocRef(duelId, runId);
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) throw new Error('NOT_FOUND');
+    const data = snap.data();
+    if (data.status !== 'active') throw new Error('INVALID_STATE');
+    const payload = {
+      ...data,
+      distanceMeters,
+      durationSeconds,
+      averagePaceSecondsPerKm: durationSeconds / (distanceMeters / 1000),
+      status: 'completed',
+      completedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      revision: (typeof data.revision === 'number' ? data.revision : 1) + 1,
+    };
+    tx.set(ref, payload);
+    return { runId: snap.id, ...payload };
+  });
+}
+
+export function subscribeToRunSession(duelId, runId, onData, onError) {
+  return onSnapshot(runDocRef(duelId, runId), (snap) => {
+    onData(snap.exists() ? { runId: snap.id, ...snap.data() } : null);
+  }, onError);
 }
 

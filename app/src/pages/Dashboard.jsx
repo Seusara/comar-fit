@@ -23,11 +23,13 @@ import {
   getOrCreateWorkoutProgress,
   toggleExerciseCompletion,
   makeProgressId,
+  subscribeToWorkoutProgress,
 } from '../firebase/workoutProgress';
 import {
   getOrCreateRunSession,
   makeRunId,
   startRunSession,
+  subscribeToRunSession,
 } from '../firebase/runSessions';
 
 // Longest uid we're willing to treat as a human-readable label. Real Firebase
@@ -151,6 +153,28 @@ function Dashboard() {
       planRequestRef.current += 1;
     };
   }, [currentUser?.uid, duelId, loadWeeklyPlan]);
+
+  React.useEffect(() => {
+    if (!duelId || !currentUser?.uid || !weeklyPlan) return undefined;
+    const today = weeklyPlan.days?.[String(currentDay)];
+    if (today?.type === 'workout') {
+      return subscribeToWorkoutProgress(
+        duelId,
+        makeProgressId(currentUser.uid, weekId, currentDay),
+        setTodayProgress,
+        () => setPlanError('No pudimos sincronizar tu progreso.'),
+      );
+    }
+    if (today?.type === 'run') {
+      return subscribeToRunSession(
+        duelId,
+        makeRunId(currentUser.uid, weekId, currentDay),
+        setRunSession,
+        () => setPlanError('No pudimos sincronizar la carrera.'),
+      );
+    }
+    return undefined;
+  }, [currentDay, currentUser?.uid, duelId, weekId, weeklyPlan]);
 
   const handleToggleExercise = React.useCallback(async (exerciseId, completed) => {
     if (!duelId || !currentUser?.uid) return;

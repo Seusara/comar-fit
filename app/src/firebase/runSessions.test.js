@@ -22,7 +22,7 @@ describe('runSessions', () => {
     const runPlan = { type: 'run', target: { distanceMeters: 2000, durationSeconds: 1200 } };
     const workoutPlan = { type: 'workout', exercises: [{id:'e1'}] };
 
-    const { getOrCreateRunSession, makeRunId, getRunSession, startRunSession } = await import('./runSessions');
+    const { completeRunSession, getOrCreateRunSession, makeRunId, getRunSession, startRunSession } = await import('./runSessions');
 
     let err = null;
     try {
@@ -43,6 +43,11 @@ describe('runSessions', () => {
     const started = await startRunSession(duelId, runId);
     expect(started.status).toBe('active');
     expect(started.revision).toBe(2);
+
+    const completed = await completeRunSession(duelId, runId, 2500, 1500);
+    expect(completed.status).toBe('completed');
+    expect(completed.averagePaceSecondsPerKm).toBe(600);
+    expect(completed.revision).toBe(3);
 
     // partner can read
     await signInWithEmailAndPassword(auth, emailB, 'secret123');

@@ -17,7 +17,9 @@ import {
   subscribeToWorkoutProgress,
   toggleExerciseCompletion,
 } from '../firebase/workoutProgress';
-import { getOrCreateRunSession, makeRunId, startRunSession } from '../firebase/runSessions';
+import {
+  completeRunSession, getOrCreateRunSession, makeRunId, startRunSession, subscribeToRunSession,
+} from '../firebase/runSessions';
 
 const FOCUS_LABELS = {
   chest_triceps: 'Pecho + tríceps', back_biceps: 'Espalda + bíceps',
@@ -58,6 +60,8 @@ function Rutina() {
   const [actionPending, setActionPending] = useState(false);
   const [openReferenceExerciseId, setOpenReferenceExerciseId] = useState(null);
   const [restingExerciseId, setRestingExerciseId] = useState(null);
+  const [runDistanceKm, setRunDistanceKm] = useState('2');
+  const [runDurationMinutes, setRunDurationMinutes] = useState('20');
   const requestRef = useRef(0);
 
   const loadDay = useCallback(async () => {
@@ -102,6 +106,16 @@ function Rutina() {
     });
   }, [currentUser?.uid, dayPlan?.type, duelId, isoWeekday, weekId]);
 
+  useEffect(() => {
+    if (!duelId || !currentUser?.uid || dayPlan?.type !== 'run') return undefined;
+    return subscribeToRunSession(
+      duelId,
+      makeRunId(currentUser.uid, weekId, isoWeekday),
+      setRunSession,
+      () => setError('No pudimos sincronizar la carrera.'),
+    );
+  }, [currentUser?.uid, dayPlan?.type, duelId, isoWeekday, weekId]);
+
   const exercises = Array.isArray(dayPlan?.exercises) ? dayPlan.exercises : [];
   const progressById = new Map((progress?.exercises ?? []).map((exercise) => [exercise.id, exercise]));
   const completed = exercises.filter((exercise) => progressById.get(exercise.id)?.completed);
@@ -134,6 +148,27 @@ function Rutina() {
       setRunSession(await startRunSession(duelId, makeRunId(currentUser.uid, weekId, isoWeekday)));
     } catch {
       setError('No pudimos iniciar la carrera.');
+    } finally {
+      setActionPending(false);
+    }
+  }
+
+  async function finishRun(event) {
+    event.preventDefault();
+    const distanceMeters = Math.round(Number(runDistanceKm) * 1000);
+    const durationSeconds = Math.round(Number(runDurationMinutes) * 60);
+    if (distanceMeters <= 0 || durationSeconds <= 0) {
+      setError('Ingresa una distancia y duración válidas.');
+      return;
+    }
+    setActionPending(true);
+    setError(null);
+    try {
+      setRunSession(await completeRunSession(
+        duelId, makeRunId(currentUser.uid, weekId, isoWeekday), distanceMeters, durationSeconds,
+      ));
+    } catch {
+      setError('No pudimos finalizar la carrera.');
     } finally {
       setActionPending(false);
     }
@@ -177,9 +212,23 @@ function Rutina() {
           <Card className="space-y-4">
             <h2 className="font-headline-lg text-xl">Carrera</h2>
             <p className="text-on-surface-variant">Meta: {runTarget(dayPlan.target)}</p>
-            {runSession?.status === 'active'
-              ? <p role="status" className="font-bold text-primary-fixed-dim">Carrera en curso</p>
-              : <Button disabled={actionPending} onClick={startRun}>Iniciar carrera</Button>}
+            {runSession?.status === 'completed' && (
+              <div role="status" className="space-y-1 font-bold text-primary-fixed-dim">
+                <p>Carrera completada</p>
+                <p className="text-sm">{runSession.distanceMeters / 1000} km · {Math.round(runSession.durationSeconds / 60)} min</p>
+              </div>
+            )}
+            {runSession?.status === 'active' && (
+              <form className="space-y-3" onSubmit={finishRun}>
+                <p role="status" className="font-bold text-primary-fixed-dim">Carrera en curso</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-sm">Distancia (km)<input aria-label="Distancia en kilómetros" type="number" min="0.1" step="0.1" value={runDistanceKm} onChange={(event) => setRunDistanceKm(event.target.value)} className="mt-1 w-full rounded-xl" /></label>
+                  <label className="text-sm">Duración (min)<input aria-label="Duración en minutos" type="number" min="1" step="1" value={runDurationMinutes} onChange={(event) => setRunDurationMinutes(event.target.value)} className="mt-1 w-full rounded-xl" /></label>
+                </div>
+                <Button type="submit" disabled={actionPending}>Finalizar carrera</Button>
+              </form>
+            )}
+            {runSession?.status === 'pending' && <Button disabled={actionPending} onClick={startRun}>Iniciar carrera</Button>}
             <p className="text-xs text-on-surface-variant">El seguimiento GPS todavía no está disponible.</p>
           </Card>
         )}
