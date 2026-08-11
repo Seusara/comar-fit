@@ -6,6 +6,7 @@ export const THEMES = [
   { id: 'dark', label: 'Oscuro', swatches: ['#090b0f', '#172027', '#55c7d8', '#7765a8'] },
   { id: 'light', label: 'Claro', swatches: ['#f3f7fa', '#ffffff', '#07889b', '#7357b5'] },
   { id: 'pink', label: 'Rosa', swatches: ['#170b16', '#32152d', '#ff4fa3', '#a78bfa'] },
+  { id: 'pink-light', label: 'Rosa claro', swatches: ['#fff7fb', '#ffffff', '#e72f87', '#8b5fc7'] },
 ];
 
 const VALID_THEMES = new Set(THEMES.map((theme) => theme.id));
@@ -25,7 +26,7 @@ export function getStoredTheme() {
 export function applyTheme(value) {
   const theme = normalizeTheme(value);
   document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.style.colorScheme = ['light', 'pink-light'].includes(theme) ? 'light' : 'dark';
   return theme;
 }
 

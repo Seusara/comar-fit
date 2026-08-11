@@ -40,4 +40,12 @@ describe('theme preferences', () => {
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(document.documentElement.style.colorScheme).toBe('light');
   });
+
+  it('supports and persists the light pink theme', () => {
+    saveTheme('pink-light');
+
+    expect(getStoredTheme()).toBe('pink-light');
+    expect(document.documentElement.dataset.theme).toBe('pink-light');
+    expect(document.documentElement.style.colorScheme).toBe('light');
+  });
 });

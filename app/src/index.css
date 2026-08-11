@@ -88,6 +88,27 @@
     --glass-alpha: 0.80;
   }
 
+  :root[data-theme='pink-light'] {
+    --background: 255 247 251;
+    --surface: 255 255 255;
+    --surface-secondary: 252 235 244;
+    --surface-elevated: 248 220 235;
+    --text-primary: 48 25 40;
+    --text-secondary: 112 79 99;
+    --primary: 231 47 135;
+    --primary-soft: 244 114 182;
+    --secondary: 196 181 253;
+    --secondary-strong: 139 95 199;
+    --accent: 8 145 178;
+    --border: 221 180 203;
+    --success: 22 163 74;
+    --danger: 220 38 80;
+    --gradient-start: #e72f87;
+    --gradient-end: #8b5fc7;
+    --glass: 255 255 255;
+    --glass-alpha: 0.92;
+  }
+
   :root {
     --on-error-container: var(--text-primary);
     --secondary-fixed-dim: var(--secondary);
@@ -138,7 +159,8 @@
 
   :root[data-theme='dark'],
   :root[data-theme='pink'] { --on-action: 255 255 255; }
-  :root[data-theme='light'] { --on-action: 255 255 255; color-scheme: light; }
+  :root[data-theme='light'],
+  :root[data-theme='pink-light'] { --on-action: 255 255 255; color-scheme: light; }
 
   body {
     background-color: rgb(var(--background));
