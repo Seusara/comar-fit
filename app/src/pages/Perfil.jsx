@@ -12,7 +12,7 @@ import { useWorkouts } from '../hooks/useWorkouts';
 import { deriveParticipantActivity } from '../duel/activeDays';
 import { updatePhysicalProfile, updateUserProfile } from '../firebase/firestore';
 import { canUpdatePhysicalProfile, nextPhysicalProfileUpdateAt } from '../firebase/profilePolicy';
-import { logoutUser } from '../firebase/auth';
+import { changeCurrentPassword, logoutUser } from '../firebase/auth';
 import { uploadProfilePhoto } from '../cloudinary/uploadProfilePhoto';
 import { processProfileImage, validateProfileImage } from '../profile/profileImage';
 import { getStoredTheme, saveTheme, THEMES } from '../theme/themes';
@@ -116,6 +116,9 @@ function Perfil() {
   const [saveError, setSaveError] = useState('');
   const [photoFile, setPhotoFile] = useState(null);
   const [photoSaving, setPhotoSaving] = useState(false);
+  const [passwordResetSending, setPasswordResetSending] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [photoProgress, setPhotoProgress] = useState(0);
   const [theme, setTheme] = useState(getStoredTheme);
 
@@ -186,6 +189,24 @@ function Perfil() {
 
   async function signOut() {
     if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) await logoutUser();
+  }
+
+  async function changePassword(event) {
+    event.preventDefault();
+    if (passwordResetSending) return;
+    setMessage(''); setSaveError('');
+    if (newPassword.length < 6) { setSaveError('La contraseña debe tener al menos 6 caracteres.'); return; }
+    if (newPassword !== confirmPassword) { setSaveError('Las contraseñas no coinciden.'); return; }
+    setPasswordResetSending(true); setMessage(''); setSaveError('');
+    try {
+      await changeCurrentPassword(newPassword);
+      setNewPassword(''); setConfirmPassword('');
+      setMessage('Contraseña actualizada correctamente.');
+    } catch (error) {
+      setSaveError(error?.code === 'auth/requires-recent-login'
+        ? 'Por seguridad, Firebase requiere que cierres sesión y vuelvas a entrar antes de cambiar la contraseña.'
+        : 'No pudimos cambiar la contraseña. Intenta nuevamente.');
+    } finally { setPasswordResetSending(false); }
   }
 
   function choosePhoto(event) {
@@ -303,6 +324,21 @@ function Perfil() {
           </Card>
 
           <Button type="submit" disabled={saving} className="w-full">{saving ? 'Guardando...' : 'Guardar cambios'}</Button>
+        </form>
+
+        <form onSubmit={changePassword}>
+        <Card className="space-y-4">
+          <div>
+            <h2 className="font-headline-lg text-lg">Seguridad</h2>
+            <p className="mt-1 text-sm text-on-surface-variant">Cambia tu contraseña usando tu sesión actual. No necesitas ingresar la contraseña anterior.</p>
+          </div>
+          <Input label="Nueva contraseña" type="password" minLength="6" autoComplete="new-password" required value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
+          <Input label="Confirmar nueva contraseña" type="password" minLength="6" autoComplete="new-password" required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
+          <Button type="submit" variant="secondary" className="w-full" disabled={passwordResetSending || !newPassword || !confirmPassword}>
+            <span className="material-symbols-outlined" aria-hidden="true">lock_reset</span>
+            {passwordResetSending ? 'Actualizando...' : 'Cambiar contraseña'}
+          </Button>
+        </Card>
         </form>
 
         <form onSubmit={savePhysical}>

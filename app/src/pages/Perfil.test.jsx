@@ -8,7 +8,7 @@ import { useUserProfile } from '../hooks/useUserProfile';
 import { useActiveDuel } from '../hooks/useActiveDuel';
 import { useWorkouts } from '../hooks/useWorkouts';
 import { updateUserProfile, updatePhysicalProfile } from '../firebase/firestore';
-import { logoutUser } from '../firebase/auth';
+import { changeCurrentPassword, logoutUser } from '../firebase/auth';
 import { uploadProfilePhoto } from '../cloudinary/uploadProfilePhoto';
 import { processProfileImage, validateProfileImage } from '../profile/profileImage';
 
@@ -45,6 +45,7 @@ describe('Perfil', () => {
     updateUserProfile.mockResolvedValue(undefined);
     updatePhysicalProfile.mockResolvedValue(undefined);
     logoutUser.mockResolvedValue(undefined);
+    changeCurrentPassword.mockResolvedValue(undefined);
     validateProfileImage.mockReturnValue(null);
     processProfileImage.mockResolvedValue(new Blob(['webp'], { type: 'image/webp' }));
     uploadProfilePhoto.mockResolvedValue('https://res.cloudinary.com/dlwlv6iyab/image/upload/avatar.webp');
@@ -107,6 +108,18 @@ describe('Perfil', () => {
     renderProfile();
     await user.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
     expect(logoutUser).toHaveBeenCalledOnce();
+  });
+
+  it('changes the password without asking for the previous password', async () => {
+    const user = userEvent.setup();
+    renderProfile();
+    await user.type(screen.getByLabelText('Nueva contraseña'), 'NuevaClave123');
+    await user.type(screen.getByLabelText('Confirmar nueva contraseña'), 'NuevaClave123');
+    await user.click(screen.getByRole('button', { name: 'Cambiar contraseña' }));
+
+    expect(changeCurrentPassword).toHaveBeenCalledWith('NuevaClave123');
+    expect(await screen.findByRole('status')).toHaveTextContent(/contraseña actualizada/i);
+    expect(screen.queryByLabelText(/contraseña actual/i)).not.toBeInTheDocument();
   });
 
   it('rejects an invalid profile photo before upload', async () => {
