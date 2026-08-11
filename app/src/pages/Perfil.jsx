@@ -18,6 +18,7 @@ import { processProfileImage, validateProfileImage } from '../profile/profileIma
 import { getStoredTheme, saveTheme, THEMES } from '../theme/themes';
 import { summarizeWorkouts } from '../utils/workoutStats';
 import { notificationsSupported, requestNotificationPermission, saveNotificationSettings } from '../notifications/reminders';
+import { registerPushDevice, unregisterPushDevice } from '../firebase/pushNotifications';
 
 const EMPTY_FORM = {
   displayName: '', age: '', height: '', experienceLevel: 'Beginner', objective: '',
@@ -199,6 +200,7 @@ function Perfil() {
     if (!enabled) {
       setForm((current) => ({ ...current, notificationsEnabled: false }));
       saveNotificationSettings({ enabled: false, time: form.usualWorkoutTime || '19:00' });
+      unregisterPushDevice(currentUser.uid).catch(() => {});
       return;
     }
     const permission = await requestNotificationPermission();
@@ -207,6 +209,15 @@ function Perfil() {
       setSaveError(permission === 'unsupported'
         ? 'Este navegador no admite notificaciones.'
         : 'Las notificaciones están bloqueadas. Actívalas desde los permisos del navegador.');
+      return;
+    }
+    try {
+      await registerPushDevice(currentUser.uid);
+    } catch (error) {
+      setForm((current) => ({ ...current, notificationsEnabled: false }));
+      setSaveError(error?.message === 'VAPID_KEY_MISSING'
+        ? 'Falta configurar la clave VAPID de Firebase para activar avisos con la app cerrada.'
+        : 'No pudimos registrar este dispositivo para notificaciones.');
       return;
     }
     setForm((current) => ({ ...current, notificationsEnabled: true }));

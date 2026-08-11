@@ -12,3 +12,17 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  let payload = {};
+  try { payload = event.data.json(); } catch { payload = { notification: { body: event.data.text() } }; }
+  const notification = payload.notification || payload.data || {};
+  event.waitUntil(self.registration.showNotification(notification.title || 'Comar-Fit', {
+    body: notification.body || 'Tienes una nueva actualización.',
+    icon: '/comar-fit-app-icon.png',
+    badge: '/comar-fit-favicon.png',
+    tag: notification.tag || 'comar-fit-update',
+    data: { url: notification.url || payload.data?.url || '/dashboard' },
+  }));
+});

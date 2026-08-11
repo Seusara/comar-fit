@@ -73,6 +73,19 @@ service cloud.firestore {
         )
       );
       allow delete: if false;
+
+      match /notificationDevices/{deviceId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) &&
+          request.resource.data.keys().hasOnly([
+            'uid', 'token', 'enabled', 'platform', 'createdAt', 'updatedAt',
+            'lastReminderDate', 'lastReminderAt'
+          ]) &&
+          request.resource.data.uid == userId &&
+          request.resource.data.token is string &&
+          request.resource.data.token.size() > 20 &&
+          request.resource.data.enabled == true;
+      }
     }
 
     match /publicProfiles/{userId} {
