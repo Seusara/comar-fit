@@ -7,6 +7,7 @@ import ProgressRing from '../components/ProgressRing';
 import FormReferenceModal from '../components/FormReferenceModal';
 import RestTimer from '../components/RestTimer';
 import GuidedWorkout from '../components/GuidedWorkout';
+import { adaptExerciseVolume, replaceExercise, substitutionOptions } from '../routines/sessionAdaptation';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveDuel } from '../hooks/useActiveDuel';
 import { findExerciseReference } from '../routines/catalog';
@@ -73,6 +74,8 @@ function Rutina() {
   const [runDistanceKm, setRunDistanceKm] = useState('2');
   const [runDurationMinutes, setRunDurationMinutes] = useState('20');
   const [guidedMode, setGuidedMode] = useState(false);
+  const [sessionMode, setSessionMode] = useState('normal');
+  const [exerciseOverrides, setExerciseOverrides] = useState({});
   const requestRef = useRef(0);
 
   const loadDay = useCallback(async () => {
@@ -127,7 +130,8 @@ function Rutina() {
     );
   }, [currentUser?.uid, dayPlan?.type, duelId, isoWeekday, weekId]);
 
-  const exercises = Array.isArray(dayPlan?.exercises) ? dayPlan.exercises : [];
+  const plannedExercises = Array.isArray(dayPlan?.exercises) ? dayPlan.exercises : [];
+  const exercises = plannedExercises.map((exercise) => adaptExerciseVolume(exerciseOverrides[exercise.id] ?? exercise, sessionMode));
   const progressById = new Map((progress?.exercises ?? []).map((exercise) => [exercise.id, exercise]));
   const completed = exercises.filter((exercise) => progressById.get(exercise.id)?.completed);
   const percentage = Number.isFinite(progress?.completionRate)
@@ -196,6 +200,12 @@ function Rutina() {
     navigate('/subir-prueba', { state: { source: 'daily-routine', exercises: selected, elapsedSeconds } });
   }
 
+  function substituteExercise(exercise) {
+    const options = substitutionOptions(exercise, exercises.map((item) => item.name));
+    if (!options.length) return;
+    setExerciseOverrides((current) => ({ ...current, [exercise.id]: replaceExercise(exercise, options[0]) }));
+  }
+
   if (duelLoading || loading) return <Layout active="rutina"><p role="status" className="text-center p-8">Cargando rutina...</p></Layout>;
 
   return (
@@ -257,6 +267,20 @@ function Rutina() {
               </div>
               <ProgressRing percentage={percentage} size={88} label="Progreso de rutina" />
             </Card>
+            <Card className="space-y-3">
+              <div>
+                <h2 className="font-headline-lg text-lg">¿Cómo llegas hoy?</h2>
+                <p className="mt-1 text-xs text-on-surface-variant">El ajuste solo afecta esta sesión, no tu plan semanal.</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2" role="group" aria-label="Adaptar sesión">
+                {[['normal', 'Bien'], ['tired', 'Cansado'], ['short', 'Poco tiempo']].map(([value, label]) => (
+                  <button key={value} type="button" aria-pressed={sessionMode === value} onClick={() => setSessionMode(value)}
+                    className={`rounded-xl border px-2 py-3 text-sm font-bold ${sessionMode === value ? 'border-primary-fixed-dim bg-primary-fixed/15 text-primary-fixed-dim' : 'border-outline-variant/30 bg-surface-container-low text-on-surface-variant'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </Card>
             <section aria-labelledby="exercises-heading">
               <h2 id="exercises-heading" className="font-headline-lg text-lg mb-3">Ejercicios</h2>
               <div className="space-y-3">
@@ -272,7 +296,10 @@ function Rutina() {
                         <span className="flex-1">
                           <span className="block font-bold">{exercise.name}</span>
                           <span className="block text-on-surface-variant text-sm mt-1">{exerciseDetail(exercise)}</span>
-                          {reference && <button type="button" onClick={(event) => { event.preventDefault(); setOpenReferenceExerciseId(exercise.id); }} className="mt-2 text-primary-fixed-dim underline text-sm">Ver técnica</button>}
+                          <span className="mt-2 flex flex-wrap gap-4">
+                            {reference && <button type="button" onClick={(event) => { event.preventDefault(); setOpenReferenceExerciseId(exercise.id); }} className="text-primary-fixed-dim underline text-sm">Ver técnica</button>}
+                            <button type="button" onClick={(event) => { event.preventDefault(); substituteExercise(exercise); }} className="text-primary-fixed-dim underline text-sm">Cambiar ejercicio</button>
+                          </span>
                         </span>
                       </label>
                       {reference && openReferenceExerciseId === exercise.id && <FormReferenceModal isOpen exerciseName={exercise.name} reference={reference} onClose={() => setOpenReferenceExerciseId(null)} />}
