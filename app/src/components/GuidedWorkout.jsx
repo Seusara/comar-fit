@@ -39,7 +39,16 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
 
   useEffect(() => {
     try { localStorage.setItem(storageKey, JSON.stringify({ index, elapsedSeconds, running, completedSets, completedExerciseIds })); } catch { /* session remains active */ }
-  }, [completedExerciseIds, completedSets, elapsedSeconds, index, running, storageKey]);
+    // Persist immediately when meaningful session state changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completedExerciseIds, completedSets, index, running, storageKey]);
+
+  useEffect(() => {
+    if (elapsedSeconds % 5 !== 0) return;
+    try { localStorage.setItem(storageKey, JSON.stringify({ index, elapsedSeconds, running, completedSets, completedExerciseIds })); } catch { /* session remains active */ }
+    // Five-second checkpoints avoid synchronous storage writes on every tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elapsedSeconds, storageKey]);
 
   if (!exercise) return null;
 

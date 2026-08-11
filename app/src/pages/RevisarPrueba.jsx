@@ -164,7 +164,7 @@ function RevisarPrueba() {
         ) : (
           <ul className="space-y-4" aria-label="Historial de entrenamientos">
             {visibleWorkouts.map((workout) => (
-              <li key={workout.workoutId}>
+              <li key={workout.workoutId} className="render-lazy">
                 <WorkoutCard
                   workout={workout}
                   editableUntil={workout.editableUntil}

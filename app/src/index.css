@@ -185,6 +185,7 @@
   .secondary-glow { box-shadow: 0 0 18px rgb(var(--secondary-strong) / 0.24); }
   .duel-primary-aura { background: radial-gradient(circle at 30% 20%, rgb(var(--primary) / 0.10), transparent 65%); }
   .duel-secondary-aura { background: radial-gradient(circle at 70% 20%, rgb(var(--secondary-strong) / 0.10), transparent 65%); }
+  .render-lazy { content-visibility: auto; contain-intrinsic-size: auto 180px; }
   /* Tap feedback (scale-down on :active) that respects prefers-reduced-motion.
      No transform/transition is applied at all unless the user's system
      allows motion, rather than just skipping the animation duration. */
