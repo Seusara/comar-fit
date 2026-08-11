@@ -80,6 +80,17 @@ function SubirPrueba() {
   const [phase, setPhase] = useState('form'); // 'form' | 'success'
   const [successMessage, setSuccessMessage] = useState('');
   const [profile, setProfile] = useState(null);
+  const isRoutineSurvey = !isEditMode && location.state?.source === 'daily-routine';
+  const elapsedMinutes = isRoutineSurvey && Number(location.state?.elapsedSeconds) > 0
+    ? Math.max(1, Math.round(Number(location.state.elapsedSeconds) / 60)) : null;
+  const surveyComplete = !isRoutineSurvey || exercises.every((exercise) => exercise.difficulty_feedback);
+
+  function rateWholeSession(value) {
+    const timestamp = new Date().toISOString();
+    setExercises((current) => current.map((exercise) => ({
+      ...exercise, difficulty_feedback: value, feedback_timestamp: timestamp,
+    })));
+  }
 
   // Combines every hook this page depends on, the same way Dashboard.jsx
   // does (`duelLoading || scoreLoading || workoutsLoading`). Edit mode also
@@ -236,8 +247,26 @@ function SubirPrueba() {
     <Layout active="pruebas">
       <form onSubmit={handleSubmit} className="space-y-6">
         <h1 className="font-headline-lg-mobile text-headline-lg-mobile">
-          {isEditMode ? 'Editar entrenamiento' : 'Subir entrenamiento'}
+          {isEditMode ? 'Editar entrenamiento' : isRoutineSurvey ? '¿Cómo te sentiste?' : 'Subir entrenamiento'}
         </h1>
+
+        {isRoutineSurvey && (
+          <Card className="space-y-4">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-primary-fixed-dim">Resumen de sesión</p>
+              <p className="mt-2 font-bold">{exercises.length} ejercicios{elapsedMinutes ? ` · ${elapsedMinutes} min reales` : ''}</p>
+              <p className="mt-1 text-sm text-on-surface-variant">Valora la sesión en general y ajusta cualquier ejercicio si fue diferente.</p>
+            </div>
+            <div className="grid grid-cols-3 gap-2" role="group" aria-label="Valoración general de la sesión">
+              {[['easy', 'Fácil'], ['moderate', 'Adecuado'], ['hard', 'Difícil']].map(([value, label]) => (
+                <button key={value} type="button" onClick={() => rateWholeSession(value)}
+                  className="min-h-[44px] rounded-xl border border-outline-variant/30 bg-surface-container-low px-2 text-sm font-bold focus-visible:ring-2 focus-visible:ring-primary-fixed-dim">
+                  {label}
+                </button>
+              ))}
+            </div>
+          </Card>
+        )}
 
         <ExerciseEditor
           exercises={exercises}
@@ -257,7 +286,8 @@ function SubirPrueba() {
           </p>
         )}
 
-        <Button type="submit" variant="primary" className="w-full" disabled={!isValid || submitting}>
+        {isRoutineSurvey && !surveyComplete && <p role="status" className="text-sm text-on-surface-variant">Responde cómo se sintió cada ejercicio para guardar la sesión.</p>}
+        <Button type="submit" variant="primary" className="w-full" disabled={!isValid || !surveyComplete || submitting}>
           {submitting ? 'Guardando…' : 'Guardar entrenamiento'}
         </Button>
       </form>

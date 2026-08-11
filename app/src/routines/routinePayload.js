@@ -21,13 +21,31 @@ export function routineExercisesFromLocationState(state) {
   ));
   if (!valid) return null;
 
-  return state.exercises.map((exercise) => ({
-    exerciseId: exercise.name.trim(),
-    name: exercise.name.trim(),
-    sets: Number(exercise.sets),
-    reps: Number(exercise.reps),
-    durationMinutes: Number(exercise.duration),
-    difficulty_feedback: null,
-    feedback_timestamp: null,
-  }));
+  const elapsedMinutes = Number.isFinite(Number(state.elapsedSeconds)) && Number(state.elapsedSeconds) > 0
+    ? Math.max(state.exercises.length, Math.round(Number(state.elapsedSeconds) / 60))
+    : null;
+  const estimatedTotal = state.exercises.reduce((sum, exercise) => sum + Number(exercise.duration), 0);
+  const actualDurations = elapsedMinutes
+    ? state.exercises.map((exercise) => 1 + Math.floor(
+      (elapsedMinutes - state.exercises.length) * (Number(exercise.duration) / estimatedTotal),
+    ))
+    : null;
+  if (actualDurations) {
+    const assigned = actualDurations.reduce((sum, value) => sum + value, 0);
+    actualDurations[0] += elapsedMinutes - assigned;
+  }
+
+  return state.exercises.map((exercise, index) => {
+    let durationMinutes = Number(exercise.duration);
+    if (actualDurations) durationMinutes = actualDurations[index];
+    return {
+      exerciseId: exercise.name.trim(),
+      name: exercise.name.trim(),
+      sets: Number(exercise.sets),
+      reps: Number(exercise.reps),
+      durationMinutes,
+      difficulty_feedback: null,
+      feedback_timestamp: null,
+    };
+  });
 }
