@@ -2,6 +2,10 @@ import { doc, getDoc, runTransaction, setDoc, serverTimestamp } from 'firebase/f
 import { db } from './config';
 import EXERCISES from '../data/exercises';
 
+export const NORMAL_WORKOUT_MIN = 4;
+export const NORMAL_WORKOUT_MAX = 6;
+export const PLAN_GENERATOR_VERSION = 2;
+
 // Week ID in format YYYY-Www (ISO week number)
 export function getWeekId(date = new Date()) {
   // Simple ISO week calculation
@@ -28,19 +32,91 @@ function deterministicRandom(seed) {
   };
 }
 
-function pickExercisesForFocus(rng, focus, count = 4) {
-  // focus is a simple keyword like 'chest' or 'legs' or 'fullbody' or 'glutes'
-  const pool = EXERCISES.filter(e => e.muscleGroup === focus || e.secondaryMuscles.includes(focus) || e.muscleGroup === 'fullbody');
-  const picked = [];
-  const poolCopy = [...pool];
-  while (picked.length < Math.min(count, poolCopy.length)) {
-    const idx = Math.floor(rng() * poolCopy.length);
-    picked.push(poolCopy.splice(idx,1)[0]);
-  }
-  return picked.map(e => ({ id: e.id, name: e.name, type: e.type, substitutionGroup: e.substitutionGroup, equipment: e.equipment, difficulty: e.difficulty, sets: 3, reps: (e.type === 'reps' ? 10 : null), durationSeconds: (e.type === 'duration' ? 60 : null) }));
+function normalizedLevel(value) {
+  const level = String(value || '').trim().toLowerCase();
+  if (level === 'advanced' || level === 'avanzado') return 'advanced';
+  if (level === 'intermediate' || level === 'intermedio') return 'intermediate';
+  return 'beginner';
 }
 
-function focusForDayByGender(gender, isoWeekday) {
+export function exerciseCountForProfile(profile = {}) {
+  const level = normalizedLevel(profile.experienceLevel);
+  if (level === 'beginner') return 4;
+  if (level === 'intermediate') return 5;
+  return Number(profile.previousWeekCompletion) >= 80 ? 6 : 5;
+}
+
+function shuffled(items, rng) {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(rng() * (index + 1));
+    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+  }
+  return result;
+}
+
+export function exerciseMatchesFocus(exercise, muscleGroups) {
+  return muscleGroups.includes(exercise.muscleGroup) ||
+    exercise.secondaryMuscles.some((group) => muscleGroups.includes(group));
+}
+
+function pickExercisesForFocus(rng, muscleGroups, count) {
+  const focusedPool = shuffled(EXERCISES.filter(
+    (exercise) => exerciseMatchesFocus(exercise, muscleGroups) && exercise.muscleGroup !== 'fullbody',
+  ), rng);
+  const fullbodyPool = shuffled(EXERCISES.filter((exercise) => exercise.muscleGroup === 'fullbody'), rng);
+  const picked = [];
+  const pickedIds = new Set();
+  const usedPatterns = new Set();
+
+  function add(exercise) {
+    if (!exercise || pickedIds.has(exercise.id) || picked.length >= count) return false;
+    picked.push(exercise);
+    pickedIds.add(exercise.id);
+    usedPatterns.add(exercise.substitutionGroup);
+    return true;
+  }
+
+  // Cover each requested muscle before adding extra variations. Prefer an
+  // exercise whose primary muscle matches, then accept a secondary match.
+  for (const group of muscleGroups) {
+    const candidates = focusedPool.filter((exercise) => (
+      exercise.muscleGroup === group || exercise.secondaryMuscles.includes(group)
+    ));
+    add(candidates.find((exercise) => (
+      exercise.muscleGroup === group && !usedPatterns.has(exercise.substitutionGroup)
+    )) || candidates.find((exercise) => !usedPatterns.has(exercise.substitutionGroup)) || candidates[0]);
+  }
+
+  // Prefer different movement patterns before selecting a close variation.
+  for (const exercise of focusedPool) {
+    if (!usedPatterns.has(exercise.substitutionGroup)) add(exercise);
+  }
+  for (const exercise of focusedPool) add(exercise);
+
+  // Full-body movements are optional finishers, not universal filler. They
+  // are used freely only on full-body days and at most once elsewhere.
+  const allowsFullbody = muscleGroups.includes('fullbody');
+  const finisherLimit = allowsFullbody ? count : Math.min(count, picked.length + 1);
+  for (const exercise of fullbodyPool) {
+    if (picked.length >= finisherLimit) break;
+    add(exercise);
+  }
+
+  return picked.slice(0, count).map((exercise) => ({
+    id: exercise.id,
+    name: exercise.name,
+    type: exercise.type,
+    substitutionGroup: exercise.substitutionGroup,
+    equipment: exercise.equipment,
+    difficulty: exercise.difficulty,
+    sets: 3,
+    reps: exercise.type === 'reps' ? 10 : null,
+    durationSeconds: exercise.type === 'duration' ? 60 : null,
+  }));
+}
+
+export function focusForDayByGender(gender, isoWeekday) {
   // isoWeekday: 1=Monday .. 7=Sunday
   // Rules provided in the brief
   if (isoWeekday === 3 || isoWeekday === 7) return { type: 'rest' };
@@ -61,7 +137,7 @@ function focusForDayByGender(gender, isoWeekday) {
   return { type: 'rest' };
 }
 
-function expandFocusToMuscleGroup(focusKey) {
+export function expandFocusToMuscleGroup(focusKey) {
   switch (focusKey) {
     case 'chest_triceps': return ['chest','triceps'];
     case 'back_biceps': return ['back','biceps'];
@@ -72,6 +148,31 @@ function expandFocusToMuscleGroup(focusKey) {
     case 'upper_body': return ['chest','back','shoulder','biceps','triceps'];
     default: return [focusKey];
   }
+}
+
+export function buildPlanDays(seed, userProfile = {}) {
+  const gender = userProfile.gender || 'M';
+  const count = exerciseCountForProfile(userProfile);
+  const rng = deterministicRandom(`${seed}|${normalizedLevel(userProfile.experienceLevel)}|${count}|v${PLAN_GENERATOR_VERSION}`);
+  const days = {};
+
+  for (let day = 1; day <= 7; day += 1) {
+    const planSpec = focusForDayByGender(gender, day);
+    if (planSpec.type === 'rest') {
+      days[String(day)] = { type: 'rest' };
+    } else if (planSpec.type === 'run') {
+      days[String(day)] = { type: 'run', target: planSpec.target };
+    } else {
+      const muscleGroups = expandFocusToMuscleGroup(planSpec.focus);
+      days[String(day)] = {
+        type: 'workout',
+        focus: planSpec.focus,
+        exercises: pickExercisesForFocus(rng, muscleGroups, count),
+      };
+    }
+  }
+
+  return days;
 }
 
 export async function getPlan(duelId, userId, weekId) {
@@ -89,24 +190,7 @@ export async function generatePlanIfMissing(duelId, userId, weekId, userProfile 
 
     // Deterministic seed
     const seed = `${duelId}|${userId}|${weekId}|${userProfile.gender || 'M'}`;
-    const rng = deterministicRandom(seed);
-
-    // build days 1..7 (ISO weekday)
-    const days = {};
-    for (let d = 1; d <= 7; d++) {
-      const planSpec = focusForDayByGender(userProfile.gender || 'M', d);
-      if (planSpec.type === 'rest') {
-        days[String(d)] = { type: 'rest' };
-      } else if (planSpec.type === 'run') {
-        days[String(d)] = { type: 'run', target: planSpec.target };
-      } else if (planSpec.type === 'workout') {
-        const muscleGroups = expandFocusToMuscleGroup(planSpec.focus);
-        // pick primary muscle group deterministically from list
-        const primary = muscleGroups[Math.floor(rng()*muscleGroups.length)];
-        const exercises = pickExercisesForFocus(rng, primary, 4);
-        days[String(d)] = { type: 'workout', focus: planSpec.focus, exercises };
-      }
-    }
+    const days = buildPlanDays(seed, userProfile);
 
     const payload = {
       userId,
