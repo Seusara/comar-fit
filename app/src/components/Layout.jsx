@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
-import logo from '../assets/branding/comar-fit-logo.webp';
-import symbol from '../assets/branding/comar-fit-symbol.webp';
+import symbol from '../assets/branding/comar-fit-symbol.png';
 
 // Phase 2.Mín builds the Dashboard and the workout history, so those two
 // items route somewhere real (any item with a `to` renders as a Link). The
@@ -16,8 +15,6 @@ const NAV_ITEMS = [
 // Intrinsic size of the header logo asset: 2x its 40px (w-10/h-10) display
 // size for retina. Declared on the <img> so the header reserves the space
 // before the image decodes (no layout shift).
-const LOGO_WIDTH = 640;
-const LOGO_HEIGHT = 240;
 const SYMBOL_SIZE = 256;
 
 const ACTIVE_ITEM_CLASS =
@@ -35,22 +32,18 @@ function Layout({ children, active = 'inicio' }) {
     <div className="min-h-screen flex flex-col bg-background text-on-surface">
       <header className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md shadow-sm border-b border-outline-variant/10">
         <div className="flex justify-between items-center px-margin_mobile h-16 w-full max-w-7xl mx-auto">
-          <div className="flex items-center" aria-label="Comar-Fit">
+          <div className="flex max-w-[180px] items-center gap-2" aria-label="Comar-Fit">
             <img
               src={symbol}
               alt=""
               width={SYMBOL_SIZE}
               height={SYMBOL_SIZE}
-              className="h-11 w-11 object-contain sm:hidden"
+              className="h-11 w-11 shrink-0 object-contain"
               aria-hidden="true"
             />
-            <img
-              src={logo}
-              alt="Comar-Fit"
-              width={LOGO_WIDTH}
-              height={LOGO_HEIGHT}
-              className="hidden h-12 w-40 object-contain object-left sm:block"
-            />
+            <span className="hidden whitespace-nowrap font-headline-lg text-lg font-extrabold italic tracking-tight text-on-surface sm:block">
+              Comar-Fit
+            </span>
           </div>
         </div>
       </header>

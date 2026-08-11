@@ -178,12 +178,14 @@ describe('Layout', () => {
         </Layout>
       </MemoryRouter>
     );
-    const logo = screen.getByRole('img', { name: /comar-fit/i });
-    expect(logo).toHaveAttribute('width', '640');
-    expect(logo).toHaveAttribute('height', '240');
+    const branding = screen.getByLabelText('Comar-Fit');
+    const logo = branding.querySelector('img');
+    expect(logo).toHaveAttribute('width', '256');
+    expect(logo).toHaveAttribute('height', '256');
+    expect(logo.className).toMatch(/h-11/);
     expect(logo.className).toMatch(/object-contain/);
-    expect(screen.getByLabelText('Comar-Fit').querySelectorAll('img')).toHaveLength(2);
-    expect(screen.queryByText('Comar-Fit')).not.toBeInTheDocument();
+    expect(branding).toHaveTextContent('Comar-Fit');
+    expect(branding.className).toMatch(/max-w-\[180px\]/);
   });
 
   it('renders all five nav items', () => {
