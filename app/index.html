@@ -6,6 +6,16 @@
     <meta name="theme-color" content="#05070d" />
     <meta name="color-scheme" content="dark" />
     <title>Comar-Fit</title>
+    <script>
+      try {
+        const savedTheme = localStorage.getItem('comar-fit:theme');
+        document.documentElement.dataset.theme = ['original', 'dark', 'light', 'pink'].includes(savedTheme)
+          ? savedTheme
+          : 'original';
+      } catch (_) {
+        document.documentElement.dataset.theme = 'original';
+      }
+    </script>
     <link rel="icon" type="image/png" href="/comar-fit-favicon.png" />
     <link rel="apple-touch-icon" href="/comar-fit-app-icon.png" />
     <link

@@ -2,18 +2,167 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root,
+  :root[data-theme='original'] {
+    --background: 19 19 19;
+    --surface: 19 19 19;
+    --surface-secondary: 28 27 27;
+    --surface-elevated: 42 42 42;
+    --text-primary: 229 226 225;
+    --text-secondary: 185 202 203;
+    --primary: 0 219 233;
+    --primary-soft: 125 244 255;
+    --secondary: 229 180 255;
+    --secondary-strong: 173 0 254;
+    --accent: 91 235 52;
+    --border: 59 73 75;
+    --success: 91 235 52;
+    --danger: 255 180 171;
+    --gradient-start: #00dbe9;
+    --gradient-end: #ad00fe;
+    --glass: 28 28 30;
+    --glass-alpha: 0.70;
+  }
+
+  :root[data-theme='dark'] {
+    --background: 9 11 15;
+    --surface: 12 15 20;
+    --surface-secondary: 20 25 31;
+    --surface-elevated: 31 38 46;
+    --text-primary: 239 243 246;
+    --text-secondary: 171 181 192;
+    --primary: 85 199 216;
+    --primary-soft: 142 220 230;
+    --secondary: 180 165 214;
+    --secondary-strong: 91 73 139;
+    --accent: 72 187 164;
+    --border: 58 70 81;
+    --success: 74 222 128;
+    --danger: 248 113 113;
+    --gradient-start: #3aa8bd;
+    --gradient-end: #66558f;
+    --glass: 20 25 31;
+    --glass-alpha: 0.92;
+  }
+
+  :root[data-theme='light'] {
+    --background: 243 247 250;
+    --surface: 255 255 255;
+    --surface-secondary: 238 244 247;
+    --surface-elevated: 226 235 240;
+    --text-primary: 17 24 39;
+    --text-secondary: 75 85 99;
+    --primary: 7 136 155;
+    --primary-soft: 14 165 183;
+    --secondary: 115 87 181;
+    --secondary-strong: 108 70 181;
+    --accent: 22 163 74;
+    --border: 184 199 207;
+    --success: 22 163 74;
+    --danger: 190 24 93;
+    --gradient-start: #07889b;
+    --gradient-end: #7357b5;
+    --glass: 255 255 255;
+    --glass-alpha: 0.94;
+  }
+
+  :root[data-theme='pink'] {
+    --background: 23 11 22;
+    --surface: 29 13 27;
+    --surface-secondary: 50 21 45;
+    --surface-elevated: 70 29 62;
+    --text-primary: 255 239 249;
+    --text-secondary: 220 184 207;
+    --primary: 255 79 163;
+    --primary-soft: 255 137 194;
+    --secondary: 196 181 253;
+    --secondary-strong: 217 70 239;
+    --accent: 34 211 238;
+    --border: 103 55 91;
+    --success: 74 222 128;
+    --danger: 251 113 133;
+    --gradient-start: #ff4fa3;
+    --gradient-end: #a855f7;
+    --glass: 50 21 45;
+    --glass-alpha: 0.80;
+  }
+
+  :root {
+    --on-error-container: var(--text-primary);
+    --secondary-fixed-dim: var(--secondary);
+    --inverse-primary: var(--primary);
+    --on-primary: var(--on-action);
+    --primary-fixed-dim: var(--primary);
+    --tertiary-fixed-dim: var(--accent);
+    --outline-variant: var(--border);
+    --surface-container: var(--surface-secondary);
+    --on-primary-fixed-variant: var(--text-primary);
+    --surface-container-lowest: var(--background);
+    --on-secondary: var(--on-action);
+    --surface-container-low: var(--surface-secondary);
+    --surface-tint: var(--primary);
+    --inverse-surface: var(--text-primary);
+    --on-secondary-fixed: var(--on-action);
+    --on-surface: var(--text-primary);
+    --tertiary: var(--accent);
+    --tertiary-fixed: var(--accent);
+    --secondary-fixed: var(--secondary);
+    --inverse-on-surface: var(--surface);
+    --surface-container-high: var(--surface-elevated);
+    --on-tertiary-fixed-variant: var(--text-primary);
+    --on-error: var(--on-action);
+    --on-tertiary: var(--on-action);
+    --on-primary-fixed: var(--on-action);
+    --on-tertiary-fixed: var(--on-action);
+    --surface-container-highest: var(--surface-elevated);
+    --secondary-container: var(--secondary-strong);
+    --surface-bright: var(--surface-elevated);
+    --primary-container: var(--primary-soft);
+    --on-background: var(--text-primary);
+    --surface-dim: var(--background);
+    --error: var(--danger);
+    --on-secondary-container: 255 255 255;
+    --on-tertiary-container: var(--text-primary);
+    --on-primary-container: var(--on-action);
+    --error-container: var(--danger);
+    --surface-variant: var(--surface-elevated);
+    --on-surface-variant: var(--text-secondary);
+    --tertiary-container: var(--accent);
+    --on-secondary-fixed-variant: var(--text-primary);
+    --outline: var(--border);
+    --primary-fixed: var(--primary-soft);
+    --on-action: 5 13 18;
+    color-scheme: dark;
+  }
+
+  :root[data-theme='dark'],
+  :root[data-theme='pink'] { --on-action: 255 255 255; }
+  :root[data-theme='light'] { --on-action: 255 255 255; color-scheme: light; }
+
+  body {
+    background-color: rgb(var(--background));
+    color: rgb(var(--text-primary));
+  }
+}
+
 @layer components {
   .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
   .glass-card {
-    background: rgba(28, 28, 30, 0.7);
+    background: rgb(var(--glass) / var(--glass-alpha));
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgb(var(--border) / 0.22);
   }
   .action-gradient {
-    background: linear-gradient(135deg, #00dbe9 0%, #ad00fe 100%);
+    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
   }
+  .app-bottom-nav { box-shadow: 0 -4px 10px rgb(var(--background) / 0.45); }
+  .primary-glow { box-shadow: 0 0 18px rgb(var(--primary) / 0.24); }
+  .secondary-glow { box-shadow: 0 0 18px rgb(var(--secondary-strong) / 0.24); }
+  .duel-primary-aura { background: radial-gradient(circle at 30% 20%, rgb(var(--primary) / 0.10), transparent 65%); }
+  .duel-secondary-aura { background: radial-gradient(circle at 70% 20%, rgb(var(--secondary-strong) / 0.10), transparent 65%); }
   /* Tap feedback (scale-down on :active) that respects prefers-reduced-motion.
      No transform/transition is applied at all unless the user's system
      allows motion, rather than just skipping the animation duration. */

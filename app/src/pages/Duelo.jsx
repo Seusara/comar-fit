@@ -103,12 +103,12 @@ function Duelo() {
         </header>
 
         <Card className="relative overflow-hidden border border-outline-variant/10 p-5 sm:p-7">
-          <div aria-hidden="true" className="absolute inset-y-0 left-0 w-1/2 bg-[radial-gradient(circle_at_30%_20%,rgba(0,219,233,0.10),transparent_65%)]" />
-          <div aria-hidden="true" className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_70%_20%,rgba(173,0,254,0.10),transparent_65%)]" />
+          <div aria-hidden="true" className="duel-primary-aura absolute inset-y-0 left-0 w-1/2" />
+          <div aria-hidden="true" className="duel-secondary-aura absolute inset-y-0 right-0 w-1/2" />
 
           <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-3">
             <div className="flex min-w-0 flex-col items-center text-center">
-              <Avatar name={nameA} src={profileA?.avatarUrl} size="h-20 w-20 sm:h-24 sm:w-24" className="shadow-[0_0_24px_rgba(0,219,233,0.16)]" />
+              <Avatar name={nameA} src={profileA?.avatarUrl} size="h-20 w-20 sm:h-24 sm:w-24" className="primary-glow" />
               <p className="mt-3 max-w-full truncate font-bold">{nameA}</p>
               <p className="font-stats-num text-2xl text-primary-fixed-dim">{currentWeek.participantA.activeDays}</p>
               <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">días activos</span>
@@ -117,7 +117,7 @@ function Duelo() {
             <div className="flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant/20 bg-surface-container-high font-stats-num text-xs italic text-primary-fixed-dim">VS</div>
 
             <div className="flex min-w-0 flex-col items-center text-center">
-              <Avatar name={nameB} src={profileB?.avatarUrl} size="h-20 w-20 sm:h-24 sm:w-24" className="shadow-[0_0_24px_rgba(173,0,254,0.16)]" />
+              <Avatar name={nameB} src={profileB?.avatarUrl} size="h-20 w-20 sm:h-24 sm:w-24" className="secondary-glow" />
               <p className="mt-3 max-w-full truncate font-bold">{nameB}</p>
               <p className="font-stats-num text-2xl text-secondary-fixed-dim">{currentWeek.participantB.activeDays}</p>
               <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">días activos</span>

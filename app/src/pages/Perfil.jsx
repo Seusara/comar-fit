@@ -15,6 +15,7 @@ import { canUpdatePhysicalProfile, nextPhysicalProfileUpdateAt } from '../fireba
 import { logoutUser } from '../firebase/auth';
 import { uploadProfilePhoto } from '../cloudinary/uploadProfilePhoto';
 import { processProfileImage, validateProfileImage } from '../profile/profileImage';
+import { getStoredTheme, saveTheme, THEMES } from '../theme/themes';
 
 const EMPTY_FORM = {
   displayName: '', age: '', height: '', experienceLevel: 'Beginner', objective: '',
@@ -68,6 +69,40 @@ function Preference({ label, description, checked, onChange }) {
   );
 }
 
+function ThemeOption({ theme, selected, onSelect }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      aria-label={`Tema ${theme.label}`}
+      onClick={() => onSelect(theme.id)}
+      className={`relative min-h-[96px] rounded-xl border p-3 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim ${
+        selected
+          ? 'border-primary-fixed-dim bg-primary-fixed-dim/10'
+          : 'border-outline-variant/30 bg-surface-container-low hover:border-primary-fixed-dim/60'
+      }`}
+    >
+      <span className="flex items-center justify-between gap-2">
+        <span className="font-label-md text-sm text-on-surface">{theme.label}</span>
+        {selected && (
+          <span className="material-symbols-outlined text-lg text-primary-fixed-dim" aria-hidden="true">
+            check_circle
+          </span>
+        )}
+      </span>
+      <span className="mt-3 flex gap-1.5" aria-hidden="true">
+        {theme.swatches.map((color) => (
+          <span
+            key={color}
+            className="h-6 w-6 rounded-full border border-black/10 shadow-sm"
+            style={{ backgroundColor: color }}
+          />
+        ))}
+      </span>
+    </button>
+  );
+}
+
 function Perfil() {
   const { currentUser } = useAuth();
   const { profile, loading: profileLoading, error: profileError, refresh } = useUserProfile();
@@ -81,6 +116,7 @@ function Perfil() {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoSaving, setPhotoSaving] = useState(false);
   const [photoProgress, setPhotoProgress] = useState(0);
+  const [theme, setTheme] = useState(getStoredTheme);
 
   useEffect(() => { setForm(profileToForm(profile)); }, [profile]);
 
@@ -104,6 +140,10 @@ function Perfil() {
   function change(event) {
     const { name, value, checked, type } = event.target;
     setForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }));
+  }
+
+  function selectTheme(nextTheme) {
+    setTheme(saveTheme(nextTheme));
   }
 
   async function saveGeneral(event) {
@@ -217,6 +257,25 @@ function Perfil() {
             <Stat icon="local_fire_department" value={`${stats.streak} días`} label="Racha actual" />
             <Stat icon="calendar_month" value={`${stats.activeDays} de 7`} label="Días activos" />
           </div>
+        </section>
+
+        <section aria-labelledby="appearance-title">
+          <Card>
+            <div className="mb-4">
+              <h2 id="appearance-title" className="font-headline-lg text-lg">Apariencia</h2>
+              <p className="mt-1 text-xs text-on-surface-variant">Elige cómo quieres ver Comar-Fit.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3" role="group" aria-label="Seleccionar tema">
+              {THEMES.map((option) => (
+                <ThemeOption
+                  key={option.id}
+                  theme={option}
+                  selected={theme === option.id}
+                  onSelect={selectTheme}
+                />
+              ))}
+            </div>
+          </Card>
         </section>
 
         <form onSubmit={saveGeneral} className="space-y-4">

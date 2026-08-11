@@ -16,8 +16,8 @@ function shiftKey(key, days) {
 function Lane({ name, activeKeys, weekStartKey, accent }) {
   const active = new Set(activeKeys ?? []);
   const activeClass = accent === 'cyan'
-    ? 'bg-primary-fixed-dim text-on-primary shadow-[0_0_14px_rgba(0,219,233,0.3)]'
-    : 'bg-secondary-container text-on-secondary-container shadow-[0_0_14px_rgba(173,0,254,0.3)]';
+    ? 'bg-primary-fixed-dim text-on-primary primary-glow'
+    : 'bg-secondary-container text-on-secondary-container secondary-glow';
 
   return (
     <div className="grid grid-cols-[4.5rem_repeat(7,minmax(0,1fr))] items-center gap-1.5">

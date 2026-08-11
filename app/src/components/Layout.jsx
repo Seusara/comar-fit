@@ -52,7 +52,7 @@ function Layout({ children, active = 'inicio' }) {
 
       <nav
         aria-label="Navegación principal"
-        className="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container shadow-[0_-4px_10px_rgba(0,0,0,0.3)] border-t border-outline-variant/20"
+        className="app-bottom-nav fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container border-t border-outline-variant/20"
       >
         <div className="flex justify-around items-center w-full h-20 pb-safe px-2">
           {NAV_ITEMS.map((item) => {
