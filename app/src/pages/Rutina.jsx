@@ -185,8 +185,11 @@ function Rutina() {
     }
   }
 
-  function registerCompleted(elapsedSeconds = null) {
-    const selected = completed.map((exercise) => ({
+  function registerCompleted(elapsedSeconds = null, completedExerciseIds = null) {
+    const selectedExercises = Array.isArray(completedExerciseIds)
+      ? exercises.filter((exercise) => completedExerciseIds.includes(exercise.id))
+      : completed;
+    const selected = selectedExercises.map((exercise) => ({
       name: exercise.name, sets: exercise.sets, reps: exercise.reps,
       duration: estimatedExerciseMinutes(exercise),
     }));
@@ -298,7 +301,7 @@ function Rutina() {
         exercises={exercises}
         progressById={progressById}
         onCompleteExercise={(exerciseId) => toggleExercise(exerciseId, true)}
-        onFinish={(elapsedSeconds) => registerCompleted(elapsedSeconds)}
+        onFinish={(elapsedSeconds, completedExerciseIds) => registerCompleted(elapsedSeconds, completedExerciseIds)}
         onClose={() => setGuidedMode(false)}
       />}
     </Layout>

@@ -35,4 +35,14 @@ describe('GuidedWorkout', () => {
     expect(screen.getByRole('heading', { name: 'Sentadillas' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeInTheDocument();
   });
+
+  it('returns the exact completed exercise ids when finishing', async () => {
+    const user = userEvent.setup();
+    const onFinish = vi.fn();
+    render(<GuidedWorkout sessionId="session-3" exercises={exercises} progressById={new Map([['pushups', { completed: true }]])}
+      onCompleteExercise={vi.fn()} onFinish={onFinish} onClose={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: 'Finalizar y registrar' }));
+    expect(onFinish).toHaveBeenCalledWith(0, ['pushups']);
+  });
 });

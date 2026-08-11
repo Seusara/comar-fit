@@ -20,6 +20,10 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
   const [elapsedSeconds, setElapsedSeconds] = useState(() => restored.elapsedSeconds ?? 0);
   const [running, setRunning] = useState(() => restored.running ?? true);
   const [completedSets, setCompletedSets] = useState(() => restored.completedSets ?? {});
+  const [completedExerciseIds, setCompletedExerciseIds] = useState(() => {
+    const synced = exercises.filter((item) => progressById.get(item.id)?.completed).map((item) => item.id);
+    return Array.from(new Set([...(restored.completedExerciseIds ?? []), ...synced]));
+  });
   const [pending, setPending] = useState(false);
   const exercise = exercises[index];
   const targetSets = Math.max(1, Number(exercise?.sets) || 1);
@@ -32,8 +36,8 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
   }, [running]);
 
   useEffect(() => {
-    try { localStorage.setItem(storageKey, JSON.stringify({ index, elapsedSeconds, running, completedSets })); } catch { /* session remains active */ }
-  }, [completedSets, elapsedSeconds, index, running, storageKey]);
+    try { localStorage.setItem(storageKey, JSON.stringify({ index, elapsedSeconds, running, completedSets, completedExerciseIds })); } catch { /* session remains active */ }
+  }, [completedExerciseIds, completedSets, elapsedSeconds, index, running, storageKey]);
 
   if (!exercise) return null;
 
@@ -45,6 +49,7 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
     setPending(true);
     try {
       await onCompleteExercise(exercise.id);
+      setCompletedExerciseIds((value) => Array.from(new Set([...value, exercise.id])));
       if (index < exercises.length - 1) setIndex(index + 1);
     } finally { setPending(false); }
   }
@@ -52,7 +57,7 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
   function finish() {
     setRunning(false);
     try { localStorage.removeItem(storageKey); } catch { /* no-op */ }
-    onFinish(elapsedSeconds);
+    onFinish(elapsedSeconds, completedExerciseIds);
   }
 
   const overall = Math.round(((index + currentSets / targetSets) / exercises.length) * 100);
@@ -86,7 +91,7 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
             <Button variant="secondary" disabled={index === exercises.length - 1} onClick={() => setIndex((value) => value + 1)}>Siguiente</Button>
           </div>
         </Card>
-        <Button className="w-full" variant="secondary" onClick={finish}>Finalizar y registrar</Button>
+        <Button className="w-full" variant="secondary" disabled={completedExerciseIds.length === 0} onClick={finish}>Finalizar y registrar</Button>
       </div>
     </div>
   );
