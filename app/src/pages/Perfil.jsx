@@ -125,7 +125,18 @@ function Perfil() {
     const activity = deriveParticipantActivity(workouts, uid, duel);
     return {
       workouts: workouts?.length ?? 0,
-      minutes: (workouts ?? []).reduce((total, workout) => total + (Number(workout.totalMinutes) || 0), 0),
+      minutes: (workouts ?? []).reduce((total, workout) => {
+        const storedTotal = Number(workout.totalMinutes);
+        if (Number.isFinite(storedTotal) && storedTotal > 0) return total + storedTotal;
+
+        const exerciseMinutes = Array.isArray(workout.exercises)
+          ? workout.exercises.reduce((sum, exercise) => {
+            const duration = Number(exercise?.durationMinutes ?? exercise?.duration);
+            return sum + (Number.isFinite(duration) && duration > 0 ? duration : 0);
+          }, 0)
+          : 0;
+        return total + exerciseMinutes;
+      }, 0),
       streak: activity.streak,
       activeDays: activity.activeDays,
     };

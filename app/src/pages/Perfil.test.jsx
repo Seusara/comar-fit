@@ -39,8 +39,8 @@ describe('Perfil', () => {
     useUserProfile.mockReturnValue({ profile, loading: false, error: null, refresh: vi.fn() });
     useActiveDuel.mockReturnValue({ duel: { duelId: 'duel-1', userA_uid: 'aaron', userB_uid: 'alex', weekStartDate: new Date('2026-07-27T00:00:00Z'), weekEndDate: new Date('2026-08-02T23:59:59Z') }, loading: false, error: null });
     useWorkouts.mockReturnValue({ workouts: [
-      { workoutId: 'w1', userId: 'aaron', totalMinutes: 30, performedAt: new Date('2026-07-28T18:00:00Z') },
-      { workoutId: 'w2', userId: 'aaron', totalMinutes: 25, performedAt: new Date('2026-07-29T18:00:00Z') },
+      { workoutId: 'w1', userId: 'aaron', exercises: [{ name: 'Flexiones', durationMinutes: 20 }, { name: 'Fondos', durationMinutes: 10 }], performedAt: new Date('2026-07-28T18:00:00Z') },
+      { workoutId: 'w2', userId: 'aaron', exercises: [{ name: 'Sentadillas', durationMinutes: 25 }], performedAt: new Date('2026-07-29T18:00:00Z') },
     ], loading: false, error: null });
     updateUserProfile.mockResolvedValue(undefined);
     updatePhysicalProfile.mockResolvedValue(undefined);
