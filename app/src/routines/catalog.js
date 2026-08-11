@@ -1,4 +1,4 @@
-export const ROUTINE_CATALOG_VERSION = 1;
+export const ROUTINE_CATALOG_VERSION = 2;
 
 export const ROUTINE_CATALOG = [
   { id: 'march', name: 'Marcha activa', phase: 'warmup', goals: ['general', 'resistencia', 'fuerza'], minLevel: 0, equipment: 'bodyweight', minutes: 3, sets: 1, reps: 1, restSeconds: 20 },
@@ -7,9 +7,28 @@ export const ROUTINE_CATALOG = [
   { id: 'jumping-jacks', name: 'Saltos de tijera', phase: 'warmup', goals: ['resistencia', 'general'], minLevel: 1, equipment: 'bodyweight', minutes: 3, sets: 2, reps: 20, restSeconds: 20 },
 
   { id: 'pushups', name: 'Flexiones', phase: 'main', goals: ['fuerza', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 5, sets: 3, reps: 10, restSeconds: 60 },
+  { id: 'incline-pushups', name: 'Flexiones inclinadas', phase: 'main', goals: ['fuerza', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 12, restSeconds: 45 },
+  { id: 'knee-pushups', name: 'Flexiones con rodillas', phase: 'main', goals: ['fuerza', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 12, restSeconds: 45 },
+  { id: 'diamond-pushups', name: 'Flexiones diamante', phase: 'main', goals: ['fuerza'], minLevel: 1, equipment: 'bodyweight', minutes: 5, sets: 3, reps: 8, restSeconds: 60 },
+  { id: 'pike-pushups', name: 'Flexiones pike', phase: 'main', goals: ['fuerza'], minLevel: 1, equipment: 'bodyweight', minutes: 5, sets: 3, reps: 8, restSeconds: 60 },
+  { id: 'shoulder-taps', name: 'Toques de hombro en plancha', phase: 'main', goals: ['fuerza', 'resistencia', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 16, restSeconds: 40 },
   { id: 'squats', name: 'Sentadillas', phase: 'main', goals: ['fuerza', 'resistencia', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 5, sets: 3, reps: 15, restSeconds: 60 },
+  { id: 'reverse-lunges', name: 'Zancadas inversas', phase: 'main', goals: ['fuerza', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 5, sets: 3, reps: 10, restSeconds: 50 },
+  { id: 'lateral-lunges', name: 'Zancadas laterales', phase: 'main', goals: ['fuerza', 'movilidad'], minLevel: 0, equipment: 'bodyweight', minutes: 5, sets: 3, reps: 10, restSeconds: 50 },
+  { id: 'split-squats', name: 'Sentadilla dividida', phase: 'main', goals: ['fuerza'], minLevel: 0, equipment: 'bodyweight', minutes: 5, sets: 3, reps: 10, restSeconds: 60 },
+  { id: 'calf-raises', name: 'Elevaciones de pantorrilla', phase: 'main', goals: ['fuerza', 'resistencia'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 20, restSeconds: 35 },
+  { id: 'wall-sit', name: 'Sentadilla en pared', phase: 'main', goals: ['fuerza', 'resistencia'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 1, restSeconds: 45 },
   { id: 'glute-bridge', name: 'Puente de glúteo', phase: 'main', goals: ['fuerza', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 12, restSeconds: 45 },
+  { id: 'single-leg-bridge', name: 'Puente de glúteo a una pierna', phase: 'main', goals: ['fuerza'], minLevel: 1, equipment: 'bodyweight', minutes: 5, sets: 3, reps: 10, restSeconds: 50 },
+  { id: 'donkey-kicks', name: 'Patadas de glúteo', phase: 'main', goals: ['fuerza', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 12, restSeconds: 40 },
+  { id: 'fire-hydrants', name: 'Abducciones en cuadrupedia', phase: 'main', goals: ['fuerza', 'movilidad'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 12, restSeconds: 40 },
   { id: 'plank', name: 'Plancha', phase: 'main', goals: ['fuerza', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 1, restSeconds: 45 },
+  { id: 'side-plank', name: 'Plancha lateral', phase: 'main', goals: ['fuerza', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 1, restSeconds: 40 },
+  { id: 'dead-bug', name: 'Dead bug', phase: 'main', goals: ['fuerza', 'movilidad', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 10, restSeconds: 35 },
+  { id: 'bicycle-crunch', name: 'Abdominal bicicleta', phase: 'main', goals: ['fuerza', 'resistencia'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 16, restSeconds: 40 },
+  { id: 'bird-dog', name: 'Bird dog', phase: 'main', goals: ['fuerza', 'movilidad', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 10, restSeconds: 35 },
+  { id: 'superman', name: 'Superman', phase: 'main', goals: ['fuerza', 'general'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 12, restSeconds: 40 },
+  { id: 'reverse-snow-angels', name: 'Ángeles invertidos', phase: 'main', goals: ['fuerza', 'movilidad'], minLevel: 0, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 12, restSeconds: 40 },
   { id: 'mountain-climbers', name: 'Escaladores', phase: 'main', goals: ['resistencia', 'general'], minLevel: 1, equipment: 'bodyweight', minutes: 4, sets: 3, reps: 20, restSeconds: 40 },
   { id: 'burpees', name: 'Burpees', phase: 'main', goals: ['resistencia', 'general'], minLevel: 1, equipment: 'bodyweight', minutes: 5, sets: 3, reps: 8, restSeconds: 60 },
   { id: 'backpack-row', name: 'Remo con mochila', phase: 'main', goals: ['fuerza'], minLevel: 0, equipment: 'Mochila', minutes: 5, sets: 3, reps: 12, restSeconds: 60 },
@@ -140,7 +159,37 @@ const EXERCISE_REFERENCES = {
     formReferenceType: 'youtube',
     tips: ['Sin rebotes', 'Mantén la postura', 'Respira y relaja']
   },
+  'Flexiones diamante': {
+    formReferenceUrl: 'https://www.youtube.com/embed/bZJW_GR9jUk',
+    formReferenceType: 'youtube-short',
+    tips: ['Forma un diamante con las manos', 'Mantén los codos cerca del cuerpo', 'Conserva el cuerpo alineado']
+  },
+  'Flexiones pike': {
+    formReferenceUrl: 'https://www.youtube.com/embed/07sZhZg8GAc',
+    formReferenceType: 'youtube-short',
+    tips: ['Cadera alta en forma de V', 'Lleva la cabeza delante de las manos', 'Empuja con los hombros']
+  },
+  'Dead bug': {
+    formReferenceUrl: 'https://www.youtube.com/embed/vgufDyLHcIE',
+    formReferenceType: 'youtube-short',
+    tips: ['Mantén el abdomen activo', 'Extiende brazo y pierna opuestos', 'Evita arquear la zona lumbar']
+  },
+  'Zancadas inversas': {
+    formReferenceUrl: 'https://www.youtube.com/embed/kz-UpxOKc0c',
+    formReferenceType: 'youtube-short',
+    tips: ['Da un paso amplio hacia atrás', 'Mantén estable la rodilla delantera', 'Empuja el suelo al regresar']
+  },
+  'Sentadillas Búlgaras': {
+    formReferenceUrl: 'https://www.youtube.com/embed/PV4idpJqRaE',
+    formReferenceType: 'youtube-short',
+    tips: ['Apoya el pie trasero en una superficie firme', 'Mantén la rodilla alineada', 'Desciende con control']
+  },
 };
+
+function asShortDemo(url) {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}rel=0&playsinline=1&start=0&end=45`;
+}
 
 /**
  * Find exercise reference data (form video URL + tips) by exercise name.
@@ -149,5 +198,10 @@ const EXERCISE_REFERENCES = {
  * @returns {Object|null} Reference data with formReferenceUrl, formReferenceType, tips
  */
 export function findExerciseReference(exerciseName) {
-  return EXERCISE_REFERENCES[exerciseName] || null;
+  if (!exerciseName) return null;
+  const exact = EXERCISE_REFERENCES[exerciseName];
+  const reference = exact || Object.entries(EXERCISE_REFERENCES).find(
+    ([name]) => name.localeCompare(exerciseName, 'es', { sensitivity: 'base' }) === 0,
+  )?.[1];
+  return reference ? { ...reference, formReferenceUrl: asShortDemo(reference.formReferenceUrl) } : null;
 }
