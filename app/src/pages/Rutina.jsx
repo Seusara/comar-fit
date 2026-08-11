@@ -7,6 +7,7 @@ import ProgressRing from '../components/ProgressRing';
 import FormReferenceModal from '../components/FormReferenceModal';
 import RestTimer from '../components/RestTimer';
 import GuidedWorkout from '../components/GuidedWorkout';
+import PageSkeleton from '../components/PageSkeleton';
 import { adaptExerciseVolume, replaceExercise, substitutionOptions } from '../routines/sessionAdaptation';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveDuel } from '../hooks/useActiveDuel';
@@ -77,6 +78,7 @@ function Rutina() {
   const [sessionMode, setSessionMode] = useState('normal');
   const [exerciseOverrides, setExerciseOverrides] = useState({});
   const requestRef = useRef(0);
+  const resumedSessionRef = useRef(null);
 
   const loadDay = useCallback(async () => {
     if (!duelId || !currentUser?.uid || !weekId) return;
@@ -136,6 +138,19 @@ function Rutina() {
   const completed = exercises.filter((exercise) => progressById.get(exercise.id)?.completed);
   const percentage = Number.isFinite(progress?.completionRate)
     ? progress.completionRate : exercises.length ? Math.round(completed.length / exercises.length * 100) : 0;
+
+  useEffect(() => {
+    if (dayPlan?.type !== 'workout' || !currentUser?.uid || exercises.length === 0) return;
+    const sessionId = `${currentUser.uid}:${weekId}:${isoWeekday}`;
+    if (resumedSessionRef.current === sessionId) return;
+    resumedSessionRef.current = sessionId;
+    try {
+      const saved = JSON.parse(localStorage.getItem(`comar-fit:guided:${sessionId}`));
+      if (saved && (saved.elapsedSeconds > 0 || Object.keys(saved.completedSets ?? {}).length > 0)) {
+        setGuidedMode(true);
+      }
+    } catch { /* ignore an invalid local session */ }
+  }, [currentUser?.uid, dayPlan?.type, exercises.length, isoWeekday, weekId]);
 
   async function toggleExercise(exerciseId, checked, showRest = true) {
     if (!duelId || actionPending) return;
@@ -206,7 +221,7 @@ function Rutina() {
     setExerciseOverrides((current) => ({ ...current, [exercise.id]: replaceExercise(exercise, options[0]) }));
   }
 
-  if (duelLoading || loading) return <Layout active="rutina"><p role="status" className="text-center p-8">Cargando rutina...</p></Layout>;
+  if (duelLoading || loading) return <Layout active="rutina"><PageSkeleton label="Cargando rutina..." /></Layout>;
 
   return (
     <Layout active="rutina">

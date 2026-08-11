@@ -1,6 +1,9 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import NetworkStatus from './components/NetworkStatus';
+import PageSkeleton from './components/PageSkeleton';
+import { routeLoaders } from './routes/prefetch';
 
 // Route-based code splitting: each page becomes its own chunk, downloaded
 // only when the user actually navigates there, instead of one ~720kB bundle
@@ -11,22 +14,22 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
-const ConnectPartner = lazy(() => import('./pages/ConnectPartner'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const SubirPrueba = lazy(() => import('./pages/SubirPrueba'));
-const RevisarPrueba = lazy(() => import('./pages/RevisarPrueba'));
-const Home = lazy(() => import('./pages/Home'));
-const Perfil = lazy(() => import('./pages/Perfil'));
-const Rutina = lazy(() => import('./pages/Rutina'));
-const Duelo = lazy(() => import('./pages/Duelo'));
+const ConnectPartner = lazy(routeLoaders.connectPartner);
+const Dashboard = lazy(routeLoaders.dashboard);
+const SubirPrueba = lazy(routeLoaders.subirPrueba);
+const RevisarPrueba = lazy(routeLoaders.revisarPrueba);
+const Home = lazy(routeLoaders.home);
+const Perfil = lazy(routeLoaders.perfil);
+const Rutina = lazy(routeLoaders.rutina);
+const Duelo = lazy(routeLoaders.duelo);
 
 function RouteFallback() {
-  return <p role="status" className="text-on-surface p-8">Cargando...</p>;
+  return <PageSkeleton />;
 }
 
 function RequireAuth({ children }) {
   const { currentUser, authLoading } = useAuth();
-  if (authLoading) return <p className="text-on-surface p-8">Cargando...</p>;
+  if (authLoading) return <PageSkeleton />;
   if (!currentUser) return <Navigate to="/login" replace />;
   return <Suspense fallback={<RouteFallback />}>{children}</Suspense>;
 }
@@ -35,6 +38,7 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <NetworkStatus />
         <Routes>
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />

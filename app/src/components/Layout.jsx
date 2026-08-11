@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import symbol from '../assets/branding/comar-fit-symbol.png';
+import { preloadRoute } from '../routes/prefetch';
 
 // Phase 2.Mín builds the Dashboard and the workout history, so those two
 // items route somewhere real (any item with a `to` renders as a Link). The
@@ -67,6 +68,9 @@ function Layout({ children, active = 'inicio' }) {
                 <Link
                   key={item.key}
                   to={item.to}
+                  onPointerEnter={() => preloadRoute(item.to)}
+                  onFocus={() => preloadRoute(item.to)}
+                  onTouchStart={() => preloadRoute(item.to)}
                   aria-current={isActive ? 'page' : undefined}
                   className={itemClass}
                 >

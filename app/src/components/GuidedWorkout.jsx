@@ -50,6 +50,15 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elapsedSeconds, storageKey]);
 
+  useEffect(() => {
+    const protectActiveSession = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', protectActiveSession);
+    return () => window.removeEventListener('beforeunload', protectActiveSession);
+  }, []);
+
   if (!exercise) return null;
 
   async function completeSet() {
@@ -74,12 +83,23 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
     onFinish(elapsedSeconds, completedExerciseIds);
   }
 
+  function requestClose() {
+    const shouldClose = window.confirm(
+      'Tu progreso y tiempo quedarán guardados para continuar después. ¿Quieres salir del entrenamiento guiado?'
+    );
+    if (!shouldClose) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ index, elapsedSeconds, running, completedSets, completedExerciseIds }));
+    } catch { /* session remains available in memory */ }
+    onClose();
+  }
+
   const overall = Math.round(((index + currentSets / targetSets) / exercises.length) * 100);
   return (
     <div className="fixed inset-0 z-40 overflow-y-auto bg-background p-4 sm:p-8" role="dialog" aria-modal="true" aria-label="Entrenamiento guiado">
       <div className="mx-auto max-w-xl space-y-5">
         <header className="flex items-center justify-between gap-4">
-          <Button variant="secondary" onClick={onClose}>Salir</Button>
+          <Button variant="secondary" onClick={requestClose}>Guardar y salir</Button>
           <div className="text-center">
             <p className="text-xs uppercase tracking-widest text-on-surface-variant">Tiempo activo</p>
             <p className="font-headline-lg text-2xl tabular-nums">{formatClock(elapsedSeconds)}</p>

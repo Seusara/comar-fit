@@ -18,6 +18,7 @@ import ProgressRing from '../components/ProgressRing';
 import StreakBadge from '../components/StreakBadge';
 import CountdownTimer from '../components/CountdownTimer';
 import WeeklyPlanCard from '../components/WeeklyPlanCard';
+import PageSkeleton from '../components/PageSkeleton';
 import { generatePlanIfMissing, getPlan } from '../firebase/plans';
 import {
   getOrCreateWorkoutProgress,
@@ -213,11 +214,7 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <Layout active="inicio">
-        <p role="status" className="text-on-surface-variant text-center p-8">
-          Cargando tu duelo...
-        </p>
-      </Layout>
+      <Layout active="inicio"><PageSkeleton label="Cargando tu duelo..." /></Layout>
     );
   }
 

@@ -9,9 +9,12 @@
     <script>
       try {
         const savedTheme = localStorage.getItem('comar-fit:theme');
-        document.documentElement.dataset.theme = ['original', 'dark', 'light', 'pink', 'pink-light'].includes(savedTheme)
-          ? savedTheme
-          : 'original';
+        const preference = ['system', 'original', 'dark', 'light', 'pink', 'pink-light'].includes(savedTheme)
+          ? savedTheme : 'original';
+        document.documentElement.dataset.theme = preference === 'system'
+          ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : preference;
+        document.documentElement.dataset.themePreference = preference;
       } catch (_) {
         document.documentElement.dataset.theme = 'original';
       }

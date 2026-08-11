@@ -2,6 +2,7 @@ export const THEME_STORAGE_KEY = 'comar-fit:theme';
 export const DEFAULT_THEME = 'original';
 
 export const THEMES = [
+  { id: 'system', label: 'Sistema', swatches: ['#f4faff', '#090b0f', '#38bdf8', '#7765a8'] },
   { id: 'original', label: 'Original', swatches: ['#131313', '#00dbe9', '#2563eb', '#ad00fe'] },
   { id: 'dark', label: 'Oscuro', swatches: ['#090b0f', '#172027', '#55c7d8', '#7765a8'] },
   { id: 'light', label: 'Claro', swatches: ['#f4faff', '#ffffff', '#38bdf8', '#3b82f6'] },
@@ -24,10 +25,24 @@ export function getStoredTheme() {
 }
 
 export function applyTheme(value) {
-  const theme = normalizeTheme(value);
+  const preference = normalizeTheme(value);
+  const theme = preference === 'system'
+    ? (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : preference;
   document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.themePreference = preference;
   document.documentElement.style.colorScheme = ['light', 'pink-light'].includes(theme) ? 'light' : 'dark';
-  return theme;
+  return preference;
+}
+
+export function watchSystemTheme() {
+  const media = window.matchMedia?.('(prefers-color-scheme: dark)');
+  if (!media) return () => {};
+  const update = () => {
+    if (getStoredTheme() === 'system') applyTheme('system');
+  };
+  media.addEventListener?.('change', update);
+  return () => media.removeEventListener?.('change', update);
 }
 
 export function saveTheme(value) {

@@ -9,6 +9,7 @@ import Layout from '../components/Layout';
 import WorkoutCard from '../components/WorkoutCard';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import PageSkeleton from '../components/PageSkeleton';
 import { summarizeWorkouts } from '../utils/workoutStats';
 
 const FILTERS = [
@@ -88,11 +89,7 @@ function RevisarPrueba() {
 
   if (loading) {
     return (
-      <Layout active="pruebas">
-        <p role="status" className="text-on-surface-variant text-center p-8">
-          Cargando tu historial...
-        </p>
-      </Layout>
+      <Layout active="pruebas"><PageSkeleton label="Cargando tu historial..." /></Layout>
     );
   }
 
