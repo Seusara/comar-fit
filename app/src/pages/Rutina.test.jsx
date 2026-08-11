@@ -91,7 +91,10 @@ describe('Rutina semanal', () => {
     expect(toggleExerciseCompletion).toHaveBeenCalledWith('duel-1', 'aaron_2026-W32_d1', 'squat', true);
     await user.click(screen.getByRole('button', { name: 'Registrar como entrenamiento' }));
     const state = JSON.parse(screen.getByTestId('navigation-state').textContent);
-    expect(state).toMatchObject({ source: 'weekly-plan', exercises: [{ name: 'Sentadillas', sets: 3, reps: 10 }] });
+    expect(state).toMatchObject({
+      source: 'daily-routine',
+      exercises: [{ name: 'Sentadillas', sets: 3, reps: 10, duration: 3 }],
+    });
     expect(Object.keys(localStorage)).toHaveLength(0);
   });
 

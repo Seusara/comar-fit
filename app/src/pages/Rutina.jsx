@@ -42,6 +42,15 @@ function runTarget(target = {}) {
   return parts.join(' o ') || 'Meta por definir';
 }
 
+function estimatedExerciseMinutes(exercise) {
+  const sets = Number.isFinite(exercise.sets) ? exercise.sets : 1;
+  const activeSeconds = Number.isFinite(exercise.durationSeconds)
+    ? exercise.durationSeconds
+    : (Number.isFinite(exercise.reps) ? exercise.reps * 3 : 30);
+  const restSeconds = Number.isFinite(exercise.restSeconds) ? exercise.restSeconds : 45;
+  return Math.max(1, Math.ceil((sets * activeSeconds + Math.max(0, sets - 1) * restSeconds) / 60));
+}
+
 function Rutina() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -177,9 +186,9 @@ function Rutina() {
   function registerCompleted() {
     const selected = completed.map((exercise) => ({
       name: exercise.name, sets: exercise.sets, reps: exercise.reps,
-      duration: Number.isFinite(exercise.durationSeconds) ? exercise.durationSeconds / 60 : null,
+      duration: estimatedExerciseMinutes(exercise),
     }));
-    navigate('/subir-prueba', { state: { source: 'weekly-plan', exercises: selected } });
+    navigate('/subir-prueba', { state: { source: 'daily-routine', exercises: selected } });
   }
 
   if (duelLoading || loading) return <Layout active="rutina"><p role="status" className="text-center p-8">Cargando rutina...</p></Layout>;

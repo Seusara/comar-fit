@@ -179,10 +179,10 @@ describe('Layout', () => {
       </MemoryRouter>
     );
     const logo = screen.getByRole('img', { name: /comar-fit/i });
-    expect(logo).toHaveAttribute('width', '192');
-    expect(logo).toHaveAttribute('height', '84');
-    expect(logo.className).toMatch(/w-32/);
-    expect(logo.className).toMatch(/h-14/);
+    expect(logo).toHaveAttribute('width', '640');
+    expect(logo).toHaveAttribute('height', '240');
+    expect(logo.className).toMatch(/object-contain/);
+    expect(screen.getByLabelText('Comar-Fit').querySelectorAll('img')).toHaveLength(2);
     expect(screen.queryByText('Comar-Fit')).not.toBeInTheDocument();
   });
 
