@@ -17,6 +17,7 @@ import { uploadProfilePhoto } from '../cloudinary/uploadProfilePhoto';
 import { processProfileImage, validateProfileImage } from '../profile/profileImage';
 import { getStoredTheme, saveTheme, THEMES } from '../theme/themes';
 import { summarizeWorkouts } from '../utils/workoutStats';
+import { notificationsSupported, requestNotificationPermission, saveNotificationSettings } from '../notifications/reminders';
 
 const EMPTY_FORM = {
   displayName: '', age: '', height: '', experienceLevel: 'Beginner', objective: '',
@@ -165,6 +166,7 @@ function Perfil() {
         notificationsEnabled: form.notificationsEnabled,
         hideScreenshotLocation: form.hideScreenshotLocation,
       });
+      saveNotificationSettings({ enabled: form.notificationsEnabled, time: form.usualWorkoutTime || '19:00' });
       setMessage('Perfil actualizado');
       refresh();
     } catch {
@@ -189,6 +191,27 @@ function Perfil() {
 
   async function signOut() {
     if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) await logoutUser();
+  }
+
+  async function changeNotifications(event) {
+    const enabled = event.target.checked;
+    setSaveError('');
+    if (!enabled) {
+      setForm((current) => ({ ...current, notificationsEnabled: false }));
+      saveNotificationSettings({ enabled: false, time: form.usualWorkoutTime || '19:00' });
+      return;
+    }
+    const permission = await requestNotificationPermission();
+    if (permission !== 'granted') {
+      setForm((current) => ({ ...current, notificationsEnabled: false }));
+      setSaveError(permission === 'unsupported'
+        ? 'Este navegador no admite notificaciones.'
+        : 'Las notificaciones están bloqueadas. Actívalas desde los permisos del navegador.');
+      return;
+    }
+    setForm((current) => ({ ...current, notificationsEnabled: true }));
+    saveNotificationSettings({ enabled: true, time: form.usualWorkoutTime || '19:00' });
+    setMessage('Notificaciones activadas');
   }
 
   async function changePassword(event) {
@@ -318,7 +341,7 @@ function Perfil() {
 
           <Card>
             <h2 className="font-headline-lg text-lg mb-2">Privacidad y avisos</h2>
-            <Preference label="Notificaciones" description="Recordatorios del duelo y tus entrenamientos" checked={form.notificationsEnabled} onChange={(event) => setForm((current) => ({ ...current, notificationsEnabled: event.target.checked }))} />
+            <Preference label="Notificaciones" description={notificationsSupported() ? `Recordatorio diario a las ${form.usualWorkoutTime || '19:00'}` : 'No disponibles en este navegador'} checked={form.notificationsEnabled} onChange={changeNotifications} />
             <div className="border-t border-outline-variant/10" />
             <Preference label="Ocultar ubicación de capturas" description="Protege la ubicación al preparar futuras pruebas" checked={form.hideScreenshotLocation} onChange={(event) => setForm((current) => ({ ...current, hideScreenshotLocation: event.target.checked }))} />
           </Card>

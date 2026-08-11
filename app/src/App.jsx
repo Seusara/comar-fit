@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import NetworkStatus from './components/NetworkStatus';
+import NotificationManager from './components/NotificationManager';
 import PageSkeleton from './components/PageSkeleton';
 import { routeLoaders } from './routes/prefetch';
 
@@ -39,6 +40,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <NetworkStatus />
+        <NotificationManager />
         <Routes>
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
