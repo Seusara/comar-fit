@@ -251,6 +251,11 @@ function Dashboard() {
   // browser's day-of-week.
   const dayNumber = weekDayNumber(now);
   const targetTime = endOfMexicoCityDay(now);
+  const todayPlan = weeklyPlan?.days?.[String(currentDay)];
+  let guidedSession = null;
+  try {
+    guidedSession = JSON.parse(localStorage.getItem(`comar-fit:guided:${currentUser.uid}:${weekId}:${currentDay}`));
+  } catch { guidedSession = null; }
 
   return (
     <Layout active="inicio">
@@ -258,6 +263,20 @@ function Dashboard() {
         <section>
           <h1 className="font-headline-lg-mobile text-headline-lg-mobile">Día {dayNumber} de 7</h1>
         </section>
+
+        {todayPlan?.type === 'workout' && (
+          <Card className="space-y-4 border border-primary-fixed-dim/20">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-primary-fixed-dim">Entrenamiento de hoy</p>
+                <h2 className="mt-1 font-headline-lg text-xl">{todayPlan.exercises?.length ?? 0} ejercicios</h2>
+                <p className="mt-1 text-sm text-on-surface-variant">{todayProgress?.completedCount ?? 0} completados{guidedSession?.elapsedSeconds ? ` · ${Math.max(1, Math.round(guidedSession.elapsedSeconds / 60))} min activos` : ''}</p>
+              </div>
+              <span className="material-symbols-outlined text-3xl text-primary-fixed-dim" aria-hidden="true">fitness_center</span>
+            </div>
+            <Button className="w-full" onClick={() => navigate('/rutina')}>{guidedSession ? 'Continuar entrenamiento' : 'Comenzar entrenamiento'}</Button>
+          </Card>
+        )}
 
         <WeeklyPlanCard
           plan={weeklyPlan}

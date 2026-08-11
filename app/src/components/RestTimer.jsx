@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 const ADJUST_DOWN_SECONDS = 15;
-const ADJUST_UP_SECONDS = 30;
+const ADJUST_UP_SECONDS = 15;
 const MIN_SECONDS = 0;
 
 /**
@@ -123,7 +123,7 @@ function RestTimer({ initialSeconds, exerciseName, nextExerciseName, onComplete,
             onClick={() => adjust(ADJUST_UP_SECONDS)}
             className="min-h-[44px] px-4 rounded-lg border border-outline-variant/30 text-on-surface text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim"
           >
-            +30s
+            +15s
           </button>
         </div>
       )}

@@ -63,6 +63,19 @@ function RevisarPrueba() {
     });
   }, [workouts, filter, duel]);
   const summary = useMemo(() => summarizeWorkouts(visibleWorkouts), [visibleWorkouts]);
+  const weeklyComparison = useMemo(() => {
+    const now = Date.now();
+    const week = 7 * 24 * 60 * 60 * 1000;
+    const current = summarizeWorkouts(workouts.filter((item) => {
+      const time = resolvePerformedAt(item)?.getTime() ?? 0;
+      return time >= now - week;
+    }));
+    const previous = summarizeWorkouts(workouts.filter((item) => {
+      const time = resolvePerformedAt(item)?.getTime() ?? 0;
+      return time >= now - 2 * week && time < now - week;
+    }));
+    return { current, previous };
+  }, [workouts]);
 
   async function handleDelete(workout) {
     setDeleteError('');
@@ -121,6 +134,17 @@ function RevisarPrueba() {
           <Card className="p-3 text-center"><p className="text-xl font-bold text-primary-fixed-dim">{summary.minutes}</p><p className="text-xs text-on-surface-variant">Minutos</p></Card>
           <Card className="p-3 text-center"><p className="text-xl font-bold text-primary-fixed-dim">{summary.exercises}</p><p className="text-xs text-on-surface-variant">Ejercicios</p></Card>
         </section>
+
+        <Card className="space-y-4">
+          <div>
+            <h2 className="font-headline-lg text-lg">Progreso semanal</h2>
+            <p className="text-xs text-on-surface-variant">Minutos frente a los 7 días anteriores</p>
+          </div>
+          {[['Esta semana', weeklyComparison.current.minutes], ['Semana anterior', weeklyComparison.previous.minutes]].map(([label, minutes]) => {
+            const max = Math.max(weeklyComparison.current.minutes, weeklyComparison.previous.minutes, 1);
+            return <div key={label} className="space-y-1"><div className="flex justify-between text-sm"><span>{label}</span><strong>{minutes} min</strong></div><div className="h-2 overflow-hidden rounded-full bg-surface-container-high"><div className="h-full rounded-full action-gradient" style={{ width: `${Math.max(minutes ? 8 : 0, minutes / max * 100)}%` }} /></div></div>;
+          })}
+        </Card>
 
         {deleteError && (
           <p role="alert" className="text-error text-sm">

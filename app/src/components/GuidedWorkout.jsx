@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Button from './Button';
 import Card from './Card';
 import ProgressRing from './ProgressRing';
+import RestTimer from './RestTimer';
 
 function formatClock(seconds) {
   const safe = Math.max(0, Number(seconds) || 0);
@@ -25,6 +26,7 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
     return Array.from(new Set([...(restored.completedExerciseIds ?? []), ...synced]));
   });
   const [pending, setPending] = useState(false);
+  const [restAfterSet, setRestAfterSet] = useState(null);
   const exercise = exercises[index];
   const targetSets = Math.max(1, Number(exercise?.sets) || 1);
   const currentSets = Math.min(completedSets[exercise?.id] ?? 0, targetSets);
@@ -45,12 +47,15 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
     if (pending) return;
     const nextSets = Math.min(currentSets + 1, targetSets);
     setCompletedSets((value) => ({ ...value, [exercise.id]: nextSets }));
-    if (nextSets < targetSets) return;
+    if (nextSets < targetSets) {
+      setRestAfterSet({ nextIndex: index, nextLabel: exercise.name });
+      return;
+    }
     setPending(true);
     try {
       await onCompleteExercise(exercise.id);
       setCompletedExerciseIds((value) => Array.from(new Set([...value, exercise.id])));
-      if (index < exercises.length - 1) setIndex(index + 1);
+      if (index < exercises.length - 1) setRestAfterSet({ nextIndex: index + 1, nextLabel: exercises[index + 1].name });
     } finally { setPending(false); }
   }
 
@@ -93,6 +98,13 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
         </Card>
         <Button className="w-full" variant="secondary" disabled={completedExerciseIds.length === 0} onClick={finish}>Finalizar y registrar</Button>
       </div>
+      {restAfterSet && <RestTimer
+        initialSeconds={exercise.restSeconds ?? 60}
+        exerciseName={exercise.name}
+        nextExerciseName={restAfterSet.nextLabel}
+        onComplete={() => { setIndex(restAfterSet.nextIndex); setRestAfterSet(null); }}
+        onSkip={() => { setIndex(restAfterSet.nextIndex); setRestAfterSet(null); }}
+      />}
     </div>
   );
 }

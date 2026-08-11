@@ -137,14 +137,14 @@ function Rutina() {
   const percentage = Number.isFinite(progress?.completionRate)
     ? progress.completionRate : exercises.length ? Math.round(completed.length / exercises.length * 100) : 0;
 
-  async function toggleExercise(exerciseId, checked) {
+  async function toggleExercise(exerciseId, checked, showRest = true) {
     if (!duelId || actionPending) return;
     setActionPending(true);
     setError(null);
     try {
       const progressId = makeProgressId(currentUser.uid, weekId, isoWeekday);
       setProgress(await toggleExerciseCompletion(duelId, progressId, exerciseId, checked));
-      if (checked) {
+      if (checked && showRest) {
         const index = exercises.findIndex((exercise) => exercise.id === exerciseId);
         if (index >= 0 && index < exercises.length - 1) setRestingExerciseId(exerciseId);
       }
@@ -272,14 +272,19 @@ function Rutina() {
                 <h2 className="font-headline-lg text-lg">¿Cómo llegas hoy?</h2>
                 <p className="mt-1 text-xs text-on-surface-variant">El ajuste solo afecta esta sesión, no tu plan semanal.</p>
               </div>
-              <div className="grid grid-cols-3 gap-2" role="group" aria-label="Adaptar sesión">
-                {[['normal', 'Bien'], ['tired', 'Cansado'], ['short', 'Poco tiempo']].map(([value, label]) => (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="group" aria-label="Adaptar sesión">
+                {[['normal', 'Bien'], ['tired', 'Cansado'], ['short', 'Poco tiempo'], ['discomfort', 'Molestia']].map(([value, label]) => (
                   <button key={value} type="button" aria-pressed={sessionMode === value} onClick={() => setSessionMode(value)}
                     className={`rounded-xl border px-2 py-3 text-sm font-bold ${sessionMode === value ? 'border-primary-fixed-dim bg-primary-fixed/15 text-primary-fixed-dim' : 'border-outline-variant/30 bg-surface-container-low text-on-surface-variant'}`}>
                     {label}
                   </button>
                 ))}
               </div>
+              {sessionMode === 'discomfort' && (
+                <div role="alert" className="rounded-xl border border-error/30 bg-error-container/20 p-3 text-sm">
+                  Detén cualquier movimiento que cause dolor. Usa “Cambiar ejercicio” para elegir una alternativa más suave; si el dolor es intenso o persiste, termina la sesión y consulta a un profesional.
+                </div>
+              )}
             </Card>
             <section aria-labelledby="exercises-heading">
               <h2 id="exercises-heading" className="font-headline-lg text-lg mb-3">Ejercicios</h2>
@@ -327,7 +332,7 @@ function Rutina() {
         sessionId={`${currentUser.uid}:${weekId}:${isoWeekday}`}
         exercises={exercises}
         progressById={progressById}
-        onCompleteExercise={(exerciseId) => toggleExercise(exerciseId, true)}
+        onCompleteExercise={(exerciseId) => toggleExercise(exerciseId, true, false)}
         onFinish={(elapsedSeconds, completedExerciseIds) => registerCompleted(elapsedSeconds, completedExerciseIds)}
         onClose={() => setGuidedMode(false)}
       />}

@@ -143,6 +143,17 @@ function Duelo() {
           <MetricRow label="Racha actual" valueA={`${currentWeek.participantA.streak} d`} valueB={`${currentWeek.participantB.streak} d`} />
         </Card>
 
+        <Card className="space-y-3">
+          <details>
+            <summary className="cursor-pointer font-bold text-primary-fixed-dim">¿Cómo se decide el duelo?</summary>
+            <div className="mt-3 space-y-2 text-sm text-on-surface-variant">
+              <p>La semana la gana quien acumula más días activos. Un día cuenta cuando existe al menos un entrenamiento válido registrado dentro de la semana del duelo.</p>
+              <p>Entrenamientos, minutos y racha se muestran para dar contexto al esfuerzo; no sustituyen el criterio principal de días activos.</p>
+              <p>Si ambos terminan con los mismos días activos, la semana queda empatada.</p>
+            </div>
+          </details>
+        </Card>
+
         <Card data-testid="season-score" className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-on-surface-variant">Marcador de temporada</p>
           <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
