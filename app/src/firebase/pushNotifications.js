@@ -3,6 +3,9 @@ import { deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { app, db } from './config';
 
 const DEVICE_ID_KEY = 'comar-fit:push-device-id';
+// Public Web Push credential. It is intentionally safe to ship to browsers;
+// VITE_FIREBASE_VAPID_KEY can still override it per environment.
+const DEFAULT_VAPID_KEY = 'BP1PrS4Tp2qyomhnEpW8YPwWtmjghnmL3UphsXvvHytkOQRkzI3XhHRoewSTb1-A_J6xKjXsYNyVFLhQU6TxFGw';
 
 async function tokenId(token) {
   const bytes = new TextEncoder().encode(token);
@@ -16,7 +19,7 @@ async function messagingInstance() {
 }
 
 export async function registerPushDevice(uid) {
-  const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+  const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY || DEFAULT_VAPID_KEY;
   if (!vapidKey) throw new Error('VAPID_KEY_MISSING');
   const registration = await navigator.serviceWorker.register('/comar-fit-sw.js');
   const messaging = await messagingInstance();
