@@ -7,9 +7,13 @@ import { deleteWorkout } from '../firebase/workouts';
 import { isInDuelWeek, resolvePerformedAt } from '../utils/dates';
 import Layout from '../components/Layout';
 import WorkoutCard from '../components/WorkoutCard';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import { summarizeWorkouts } from '../utils/workoutStats';
 
 const FILTERS = [
   { key: 'week', label: 'Esta semana' },
+  { key: 'month', label: '30 días' },
   { key: 'all', label: 'Todas' },
 ];
 
@@ -45,8 +49,12 @@ function RevisarPrueba() {
     // "Esta semana" means the duel's own week window (`weekStartDate` /
     // `weekEndDate`, real UTC Timestamps on the duel document), not a
     // locally-computed Monday.
-    const filtered =
-      filter === 'week' ? workouts.filter((workout) => isInDuelWeek(workout, duel)) : workouts;
+    const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const filtered = filter === 'week'
+      ? workouts.filter((workout) => isInDuelWeek(workout, duel))
+      : filter === 'month'
+        ? workouts.filter((workout) => (resolvePerformedAt(workout)?.getTime() ?? 0) >= monthAgo)
+        : workouts;
 
     return [...filtered].sort((a, b) => {
       const dateA = resolvePerformedAt(a)?.getTime() ?? 0;
@@ -54,6 +62,7 @@ function RevisarPrueba() {
       return dateB - dateA;
     });
   }, [workouts, filter, duel]);
+  const summary = useMemo(() => summarizeWorkouts(visibleWorkouts), [visibleWorkouts]);
 
   async function handleDelete(workout) {
     setDeleteError('');
@@ -107,6 +116,12 @@ function RevisarPrueba() {
           ))}
         </div>
 
+        <section className="grid grid-cols-3 gap-3" aria-label="Resumen del periodo">
+          <Card className="p-3 text-center"><p className="text-xl font-bold text-primary-fixed-dim">{summary.workouts}</p><p className="text-xs text-on-surface-variant">Sesiones</p></Card>
+          <Card className="p-3 text-center"><p className="text-xl font-bold text-primary-fixed-dim">{summary.minutes}</p><p className="text-xs text-on-surface-variant">Minutos</p></Card>
+          <Card className="p-3 text-center"><p className="text-xl font-bold text-primary-fixed-dim">{summary.exercises}</p><p className="text-xs text-on-surface-variant">Ejercicios</p></Card>
+        </section>
+
         {deleteError && (
           <p role="alert" className="text-error text-sm">
             {deleteError}
@@ -114,9 +129,10 @@ function RevisarPrueba() {
         )}
 
         {workouts.length === 0 ? (
-          <p className="text-on-surface-variant text-sm text-center p-8">
-            Aún no tienes entrenamientos. ¡Registra tu primer entrenamiento para empezar!
-          </p>
+          <Card className="space-y-4 text-center">
+            <p className="text-on-surface-variant text-sm">Aún no tienes entrenamientos. Empieza la rutina de hoy y registra tu primer entrenamiento.</p>
+            <Button onClick={() => navigate('/rutina')}>Ir a mi rutina</Button>
+          </Card>
         ) : visibleWorkouts.length === 0 ? (
           <p className="text-on-surface-variant text-sm text-center p-8">
             No hay entrenamientos en este periodo.
