@@ -6,6 +6,7 @@ import Button from '../components/Button';
 import ProgressRing from '../components/ProgressRing';
 import FormReferenceModal from '../components/FormReferenceModal';
 import RestTimer from '../components/RestTimer';
+import GuidedWorkout from '../components/GuidedWorkout';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveDuel } from '../hooks/useActiveDuel';
 import { findExerciseReference } from '../routines/catalog';
@@ -71,6 +72,7 @@ function Rutina() {
   const [restingExerciseId, setRestingExerciseId] = useState(null);
   const [runDistanceKm, setRunDistanceKm] = useState('2');
   const [runDurationMinutes, setRunDurationMinutes] = useState('20');
+  const [guidedMode, setGuidedMode] = useState(false);
   const requestRef = useRef(0);
 
   const loadDay = useCallback(async () => {
@@ -183,12 +185,12 @@ function Rutina() {
     }
   }
 
-  function registerCompleted() {
+  function registerCompleted(elapsedSeconds = null) {
     const selected = completed.map((exercise) => ({
       name: exercise.name, sets: exercise.sets, reps: exercise.reps,
       duration: estimatedExerciseMinutes(exercise),
     }));
-    navigate('/subir-prueba', { state: { source: 'daily-routine', exercises: selected } });
+    navigate('/subir-prueba', { state: { source: 'daily-routine', exercises: selected, elapsedSeconds } });
   }
 
   if (duelLoading || loading) return <Layout active="rutina"><p role="status" className="text-center p-8">Cargando rutina...</p></Layout>;
@@ -277,7 +279,8 @@ function Rutina() {
               </div>
             </section>
             <div className="space-y-3">
-              <Button className="w-full" disabled={completed.length === 0} onClick={registerCompleted}>Registrar como entrenamiento</Button>
+              <Button className="w-full" disabled={exercises.length === 0} onClick={() => setGuidedMode(true)}>Comenzar entrenamiento guiado</Button>
+              <Button className="w-full" disabled={completed.length === 0} onClick={() => registerCompleted()}>Registrar como entrenamiento</Button>
               <Button variant="secondary" className="w-full" onClick={() => navigate('/subir-prueba')}>Registro manual</Button>
             </div>
           </>
@@ -290,6 +293,14 @@ function Rutina() {
           exerciseName={exercises[index]?.name} nextExerciseName={exercises[index + 1]?.name}
           onComplete={() => setRestingExerciseId(null)} onSkip={() => setRestingExerciseId(null)} />;
       })()}
+      {guidedMode && <GuidedWorkout
+        sessionId={`${currentUser.uid}:${weekId}:${isoWeekday}`}
+        exercises={exercises}
+        progressById={progressById}
+        onCompleteExercise={(exerciseId) => toggleExercise(exerciseId, true)}
+        onFinish={(elapsedSeconds) => registerCompleted(elapsedSeconds)}
+        onClose={() => setGuidedMode(false)}
+      />}
     </Layout>
   );
 }
