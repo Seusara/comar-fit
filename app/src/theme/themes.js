@@ -4,9 +4,9 @@ export const DEFAULT_THEME = 'original';
 export const THEMES = [
   { id: 'original', label: 'Original', swatches: ['#131313', '#00dbe9', '#2563eb', '#ad00fe'] },
   { id: 'dark', label: 'Oscuro', swatches: ['#090b0f', '#172027', '#55c7d8', '#7765a8'] },
-  { id: 'light', label: 'Claro', swatches: ['#f3f7fa', '#ffffff', '#07889b', '#7357b5'] },
+  { id: 'light', label: 'Claro', swatches: ['#f4faff', '#ffffff', '#38bdf8', '#3b82f6'] },
   { id: 'pink', label: 'Rosa', swatches: ['#170b16', '#32152d', '#ff4fa3', '#a78bfa'] },
-  { id: 'pink-light', label: 'Rosa claro', swatches: ['#fff7fb', '#ffffff', '#e72f87', '#8b5fc7'] },
+  { id: 'pink-light', label: 'Rosa claro', swatches: ['#fff7fb', '#ffffff', '#e72f87', '#be185d'] },
 ];
 
 const VALID_THEMES = new Set(THEMES.map((theme) => theme.id));

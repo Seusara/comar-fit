@@ -47,22 +47,22 @@
   }
 
   :root[data-theme='light'] {
-    --background: 243 247 250;
+    --background: 244 250 255;
     --surface: 255 255 255;
-    --surface-secondary: 238 244 247;
-    --surface-elevated: 226 235 240;
+    --surface-secondary: 232 245 255;
+    --surface-elevated: 214 237 252;
     --text-primary: 17 24 39;
     --text-secondary: 75 85 99;
-    --primary: 7 136 155;
-    --primary-soft: 14 165 183;
-    --secondary: 115 87 181;
-    --secondary-strong: 108 70 181;
+    --primary: 2 132 199;
+    --primary-soft: 56 189 248;
+    --secondary: 96 165 250;
+    --secondary-strong: 37 99 235;
     --accent: 22 163 74;
-    --border: 184 199 207;
+    --border: 177 210 231;
     --success: 22 163 74;
     --danger: 190 24 93;
-    --gradient-start: #07889b;
-    --gradient-end: #7357b5;
+    --gradient-start: #0284c7;
+    --gradient-end: #3b82f6;
     --glass: 255 255 255;
     --glass-alpha: 0.94;
   }
@@ -97,14 +97,14 @@
     --text-secondary: 112 79 99;
     --primary: 231 47 135;
     --primary-soft: 244 114 182;
-    --secondary: 196 181 253;
-    --secondary-strong: 139 95 199;
+    --secondary: 244 114 182;
+    --secondary-strong: 219 39 119;
     --accent: 8 145 178;
     --border: 221 180 203;
     --success: 22 163 74;
     --danger: 220 38 80;
     --gradient-start: #e72f87;
-    --gradient-end: #8b5fc7;
+    --gradient-end: #be185d;
     --glass: 255 255 255;
     --glass-alpha: 0.92;
   }
