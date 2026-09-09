@@ -184,6 +184,81 @@ const EXERCISE_REFERENCES = {
     formReferenceType: 'youtube-short',
     tips: ['Apoya el pie trasero en una superficie firme', 'Mantén la rodilla alineada', 'Desciende con control']
   },
+  'Flexiones inclinadas': {
+    formReferenceUrl: 'https://www.youtube.com/embed/GnZY8GlII5c',
+    formReferenceType: 'youtube',
+    tips: ['Manos apoyadas en una superficie elevada', 'Cuerpo en línea recta de cabeza a talones', 'Baja controlado hasta acercar el pecho al borde']
+  },
+  'Flexiones con rodillas': {
+    formReferenceUrl: 'https://www.youtube.com/embed/QjN9gIpaOAQ',
+    formReferenceType: 'youtube',
+    tips: ['Rodillas apoyadas en el suelo, alineadas con la cadera', 'Mantén el torso recto, sin hundir la espalda baja', 'Baja controlado y empuja con el pecho al subir']
+  },
+  'Toques de hombro en plancha': {
+    formReferenceUrl: 'https://www.youtube.com/embed/daYE4t2l3QI',
+    formReferenceType: 'youtube',
+    tips: ['Pies bien separados para dar estabilidad', 'Evita rotar la cadera al tocar el hombro', 'Core apretado durante todo el movimiento']
+  },
+  'Zancadas laterales': {
+    formReferenceUrl: 'https://www.youtube.com/embed/6mDKhdmTjao',
+    formReferenceType: 'youtube',
+    tips: ['Da un paso amplio hacia el costado', 'Rodilla de apoyo alineada con el pie', 'Empuja con el talón para volver al centro']
+  },
+  'Sentadilla dividida': {
+    formReferenceUrl: 'https://www.youtube.com/embed/WHlBuTr43U8',
+    formReferenceType: 'youtube',
+    tips: ['Pies separados uno delante del otro, ambos fijos', 'Baja recto, sin que la rodilla delantera pase la punta del pie', 'Reparte el peso entre ambas piernas']
+  },
+  'Elevaciones de pantorrilla': {
+    formReferenceUrl: 'https://www.youtube.com/embed/VPiYvhK5Lik',
+    formReferenceType: 'youtube',
+    tips: ['Sube hasta quedar en punta de pies', 'Aprieta la pantorrilla arriba un segundo', 'Baja despacio y con control']
+  },
+  'Sentadilla en pared': {
+    formReferenceUrl: 'https://www.youtube.com/embed/mGTJtgmYgRw',
+    formReferenceType: 'youtube',
+    tips: ['Espalda totalmente pegada a la pared', 'Rodillas a 90 grados, alineadas con los tobillos', 'Mantén el abdomen activo durante todo el tiempo']
+  },
+  'Puente de glúteo a una pierna': {
+    formReferenceUrl: 'https://www.youtube.com/embed/aq9m3SNZqZ0',
+    formReferenceType: 'youtube',
+    tips: ['Una pierna extendida, la otra apoyada firme', 'Empuja con el talón de apoyo para subir la cadera', 'Evita rotar la cadera hacia los lados']
+  },
+  'Patadas de glúteo': {
+    formReferenceUrl: 'https://www.youtube.com/embed/-u2KtdPwmew',
+    formReferenceType: 'youtube',
+    tips: ['Manos bajo los hombros, rodillas bajo la cadera', 'El movimiento nace del glúteo, no de la espalda baja', 'Sube solo hasta alinear el muslo con el torso']
+  },
+  'Abducciones en cuadrupedia': {
+    formReferenceUrl: 'https://www.youtube.com/embed/SeiNY5m7kE0',
+    formReferenceType: 'youtube',
+    tips: ['Espalda neutra, sin arquear', 'Rodilla flexionada a 90 grados durante todo el movimiento', 'Sube la pierna hacia afuera sin girar la cadera']
+  },
+  'Plancha lateral': {
+    formReferenceUrl: 'https://www.youtube.com/embed/aegxsROLe4s',
+    formReferenceType: 'youtube',
+    tips: ['Codo alineado justo debajo del hombro', 'Cuerpo en línea recta, sin dejar caer la cadera', 'Cadera y hombros mirando al frente']
+  },
+  'Abdominal bicicleta': {
+    formReferenceUrl: 'https://www.youtube.com/embed/ibGRT6byKHI',
+    formReferenceType: 'youtube',
+    tips: ['Protege el cuello, no jales con las manos', 'Lleva el codo hacia la rodilla contraria', 'Movimiento lento y controlado, no rápido']
+  },
+  'Bird dog': {
+    formReferenceUrl: 'https://www.youtube.com/embed/MEKThiUpdyc',
+    formReferenceType: 'youtube',
+    tips: ['Extiende brazo y pierna opuestos a la vez', 'Mantén la espalda recta, sin girar el torso', 'Baja con control antes de cambiar de lado']
+  },
+  'Superman': {
+    formReferenceUrl: 'https://www.youtube.com/embed/I2w92FymIj8',
+    formReferenceType: 'youtube',
+    tips: ['Eleva brazos y piernas a la vez desde el suelo', 'Aprieta glúteos y espalda baja arriba', 'Sube solo hasta donde no sientas dolor lumbar']
+  },
+  'Ángeles invertidos': {
+    formReferenceUrl: 'https://www.youtube.com/embed/qTaGqpAmewg',
+    formReferenceType: 'youtube',
+    tips: ['Boca abajo, brazos en forma de W', 'Aprieta los omóplatos al subir los brazos', 'Movimiento lento, sin usar impulso']
+  },
 };
 
 function asShortDemo(url) {
