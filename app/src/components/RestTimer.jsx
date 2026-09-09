@@ -57,6 +57,8 @@ function RestTimer({ initialSeconds, exerciseName, nextExerciseName, onComplete,
   const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
   const [isPaused, setIsPaused] = useState(false);
   const hasFinishedRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     if (isPaused) return undefined;
@@ -65,6 +67,7 @@ function RestTimer({ initialSeconds, exerciseName, nextExerciseName, onComplete,
         hasFinishedRef.current = true;
         playChime();
         vibrate([200, 100, 200]);
+        onCompleteRef.current();
       }
       return undefined;
     }
@@ -77,8 +80,6 @@ function RestTimer({ initialSeconds, exerciseName, nextExerciseName, onComplete,
   function adjust(deltaSeconds) {
     setSecondsLeft((current) => Math.max(MIN_SECONDS, current + deltaSeconds));
   }
-
-  const isDone = secondsLeft <= 0;
 
   return createPortal(
     <div
@@ -102,42 +103,31 @@ function RestTimer({ initialSeconds, exerciseName, nextExerciseName, onComplete,
         <p className="text-on-surface-variant text-sm mt-4">Siguiente: {nextExerciseName}</p>
       )}
 
-      {!isDone && (
-        <div className="flex gap-3 mt-8">
-          <button
-            type="button"
-            onClick={() => adjust(-ADJUST_DOWN_SECONDS)}
-            className="min-h-[44px] px-4 rounded-lg border border-outline-variant/30 text-on-surface text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim"
-          >
-            -15s
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsPaused((current) => !current)}
-            className="min-h-[44px] px-4 rounded-lg border border-outline-variant/30 text-on-surface text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim"
-          >
-            {isPaused ? 'Reanudar' : 'Pausar'}
-          </button>
-          <button
-            type="button"
-            onClick={() => adjust(ADJUST_UP_SECONDS)}
-            className="min-h-[44px] px-4 rounded-lg border border-outline-variant/30 text-on-surface text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim"
-          >
-            +15s
-          </button>
-        </div>
-      )}
+      <div className="flex gap-3 mt-8">
+        <button
+          type="button"
+          onClick={() => adjust(-ADJUST_DOWN_SECONDS)}
+          className="min-h-[44px] px-4 rounded-lg border border-outline-variant/30 text-on-surface text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim"
+        >
+          -15s
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsPaused((current) => !current)}
+          className="min-h-[44px] px-4 rounded-lg border border-outline-variant/30 text-on-surface text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim"
+        >
+          {isPaused ? 'Reanudar' : 'Pausar'}
+        </button>
+        <button
+          type="button"
+          onClick={() => adjust(ADJUST_UP_SECONDS)}
+          className="min-h-[44px] px-4 rounded-lg border border-outline-variant/30 text-on-surface text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim"
+        >
+          +15s
+        </button>
+      </div>
 
       <div className="flex flex-col gap-3 mt-10 w-full max-w-xs">
-        {isDone && (
-          <button
-            type="button"
-            onClick={onComplete}
-            className="min-h-[44px] rounded-lg bg-primary-fixed-dim text-on-primary-fixed font-bold px-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim"
-          >
-            Siguiente ejercicio
-          </button>
-        )}
         <button
           type="button"
           onClick={onSkip}
