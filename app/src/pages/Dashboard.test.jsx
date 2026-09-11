@@ -28,6 +28,11 @@ vi.mock('../contexts/AuthContext');
 vi.mock('../firebase/plans');
 vi.mock('../firebase/workoutProgress');
 vi.mock('../firebase/runSessions');
+vi.mock('../firebase/suggestions', () => ({
+  getPendingSuggestion: vi.fn().mockResolvedValue(null),
+  acceptSuggestion: vi.fn().mockResolvedValue(undefined),
+  dismissSuggestion: vi.fn().mockResolvedValue(undefined),
+}));
 
 // Wednesday of the duel week, so "Día X de 7" and the countdown are
 // deterministic regardless of when the suite actually runs.

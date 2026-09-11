@@ -19,6 +19,8 @@ import StreakBadge from '../components/StreakBadge';
 import CountdownTimer from '../components/CountdownTimer';
 import WeeklyPlanCard from '../components/WeeklyPlanCard';
 import PageSkeleton from '../components/PageSkeleton';
+import ProgressionSuggestions from '../components/ProgressionSuggestions';
+import { getPendingSuggestion, acceptSuggestion, dismissSuggestion } from '../firebase/suggestions';
 import { generatePlanIfMissing, getPlan } from '../firebase/plans';
 import {
   getOrCreateWorkoutProgress,
@@ -107,6 +109,40 @@ function Dashboard() {
   const [planError, setPlanError] = React.useState(null);
   const [actionPending, setActionPending] = React.useState(false);
   const planRequestRef = React.useRef(0);
+
+  // Progression suggestions state
+  const [suggestion, setSuggestion] = React.useState(null);
+  const [suggestionPending, setSuggestionPending] = React.useState(false);
+
+  // Load pending suggestion once per duel+week
+  React.useEffect(() => {
+    if (!duelId || !currentUser?.uid) return;
+    getPendingSuggestion(duelId, currentUser.uid, weekId)
+      .then(setSuggestion)
+      .catch(() => {}); // non-critical; silent fail
+  }, [duelId, currentUser?.uid, weekId]);
+
+  const handleAcceptSuggestion = React.useCallback(async () => {
+    if (!duelId || !currentUser?.uid) return;
+    setSuggestionPending(true);
+    try {
+      await acceptSuggestion(duelId, currentUser.uid, weekId);
+      setSuggestion(null);
+    } catch { /* silent */ } finally {
+      setSuggestionPending(false);
+    }
+  }, [duelId, currentUser?.uid, weekId]);
+
+  const handleDismissSuggestion = React.useCallback(async () => {
+    if (!duelId || !currentUser?.uid) return;
+    setSuggestionPending(true);
+    try {
+      await dismissSuggestion(duelId, currentUser.uid, weekId);
+      setSuggestion(null);
+    } catch { /* silent */ } finally {
+      setSuggestionPending(false);
+    }
+  }, [duelId, currentUser?.uid, weekId]);
 
   const loadWeeklyPlan = React.useCallback(async () => {
     if (!duelId || !currentUser?.uid) return;
@@ -271,6 +307,14 @@ function Dashboard() {
         <section>
           <h1 className="font-headline-lg-mobile text-headline-lg-mobile">Día {dayNumber} de 7</h1>
         </section>
+
+        {/* Banner de sugerencias de progresión — solo al inicio de semana si hay pending */}
+        <ProgressionSuggestions
+          suggestion={suggestion}
+          onAccept={handleAcceptSuggestion}
+          onDismiss={handleDismissSuggestion}
+          pending={suggestionPending}
+        />
 
         {/* Plan semanal — centro de atención */}
         <WeeklyPlanCard
