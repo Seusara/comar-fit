@@ -14,7 +14,12 @@ function getRemaining(targetTime) {
  * caller so this component stays testable/reusable rather than hardcoding
  * "midnight" logic).
  */
-function CountdownTimer({ targetTime, label = 'Tiempo restante hoy' }) {
+/**
+ * compact=true: renders a small inline "Xh Ym" without the icon and label,
+ * suitable for embedding inside a card row.
+ * compact=false (default): full-size centered display with icon and label.
+ */
+function CountdownTimer({ targetTime, label = 'Tiempo restante hoy', compact = false }) {
   const [remaining, setRemaining] = useState(() => getRemaining(targetTime));
 
   useEffect(() => {
@@ -25,6 +30,14 @@ function CountdownTimer({ targetTime, label = 'Tiempo restante hoy' }) {
 
     return () => clearInterval(intervalId);
   }, [targetTime]);
+
+  if (compact) {
+    return (
+      <span className="text-xs text-on-surface-variant">
+        {remaining.hours}h {remaining.minutes}m restantes
+      </span>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center">
