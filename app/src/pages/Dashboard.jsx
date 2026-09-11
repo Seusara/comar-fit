@@ -126,12 +126,12 @@ function Dashboard() {
     if (!duelId || !currentUser?.uid) return;
     setSuggestionPending(true);
     try {
-      await acceptSuggestion(duelId, currentUser.uid, weekId);
+      await acceptSuggestion(duelId, currentUser.uid, weekId, suggestion?.days);
       setSuggestion(null);
     } catch { /* silent */ } finally {
       setSuggestionPending(false);
     }
-  }, [duelId, currentUser?.uid, weekId]);
+  }, [duelId, currentUser?.uid, weekId, suggestion?.days]);
 
   const handleDismissSuggestion = React.useCallback(async () => {
     if (!duelId || !currentUser?.uid) return;

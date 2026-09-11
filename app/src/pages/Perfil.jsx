@@ -5,6 +5,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import Select from '../components/Select';
 import Avatar from '../components/Avatar';
+import ProgressionHistory from '../components/ProgressionHistory';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useActiveDuel } from '../hooks/useActiveDuel';
@@ -19,6 +20,8 @@ import { getStoredTheme, saveTheme, THEMES } from '../theme/themes';
 import { summarizeWorkouts } from '../utils/workoutStats';
 import { notificationsSupported, requestNotificationPermission, saveNotificationSettings } from '../notifications/reminders';
 import { registerPushDevice, unregisterPushDevice } from '../firebase/pushNotifications';
+import { getProgressionHistory } from '../firebase/progressionHistory';
+import { getDuelWeekContext } from '../utils/dates';
 
 const EMPTY_FORM = {
   displayName: '', age: '', height: '', experienceLevel: 'Beginner', objective: '',
@@ -123,8 +126,20 @@ function Perfil() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [photoProgress, setPhotoProgress] = useState(0);
   const [theme, setTheme] = useState(getStoredTheme);
+  const [progressionEntries, setProgressionEntries] = useState([]);
+  const [progressionLoading, setProgressionLoading] = useState(false);
 
   useEffect(() => { setForm(profileToForm(profile)); }, [profile]);
+
+  // Load progression history once we have a duel
+  useEffect(() => {
+    if (!duel?.duelId || !currentUser?.uid) return;
+    setProgressionLoading(true);
+    getProgressionHistory(duel.duelId, currentUser.uid)
+      .then(setProgressionEntries)
+      .catch(() => {})
+      .finally(() => setProgressionLoading(false));
+  }, [duel?.duelId, currentUser?.uid]);
 
   const stats = useMemo(() => {
     const uid = currentUser?.uid;
@@ -312,6 +327,11 @@ function Perfil() {
             <Stat icon="local_fire_department" value={`${stats.streak} días`} label="Racha actual" />
             <Stat icon="calendar_month" value={`${stats.activeDays} de 7`} label="Días activos" />
           </div>
+          {(progressionLoading || progressionEntries.length > 0) && (
+            <div className="mt-4">
+              <ProgressionHistory entries={progressionEntries} loading={progressionLoading} />
+            </div>
+          )}
         </section>
 
         <section aria-labelledby="appearance-title">

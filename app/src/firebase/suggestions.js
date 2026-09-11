@@ -9,6 +9,7 @@
  */
 
 import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { recordAcceptedSuggestion } from './progressionHistory';
 
 /**
  * Fetches the pending suggestion doc for the current user + week.
@@ -18,21 +19,23 @@ export async function getPendingSuggestion(duelId, userId, weekId) {
   const db = getFirestore();
   const docId = `${userId}_${weekId}`;
   const ref = doc(db, `duels/${duelId}/suggestions/${docId}`);
-  const snap = await ref.get ? ref.get() : getDoc(ref);
+  const snap = await getDoc(ref);
   if (!snap.exists()) return null;
   const data = snap.data();
   return data.status === 'pending' ? { id: snap.id, ...data } : null;
 }
 
 /**
- * Marks a suggestion as accepted.
- * The next plan generation will incorporate the proposed values.
+ * Marks a suggestion as accepted and writes a progression history entry.
  */
-export async function acceptSuggestion(duelId, userId, weekId) {
+export async function acceptSuggestion(duelId, userId, weekId, days) {
   const db = getFirestore();
   const docId = `${userId}_${weekId}`;
   const ref = doc(db, `duels/${duelId}/suggestions/${docId}`);
   await updateDoc(ref, { status: 'accepted', respondedAt: serverTimestamp() });
+  if (days) {
+    await recordAcceptedSuggestion(duelId, userId, weekId, days).catch(() => {});
+  }
 }
 
 /**
