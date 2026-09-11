@@ -288,7 +288,6 @@ service cloud.firestore {
       }
 
       match /runSessions/{runId} {
-        // Reads: duel participants may read run session
         allow read: if isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data);
 
         // Create: only owner may create runSession for run days
@@ -347,6 +346,31 @@ service cloud.firestore {
           ]);
 
         allow delete: if false;
+      }
+
+      // Progression suggestions — written by Cloud Function, read/updated by the owner
+      match /suggestions/{suggestionId} {
+        allow read: if isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data)
+          && suggestionId.matches('^' + request.auth.uid + '_.*');
+        allow update: if isOwner(resource.data.userId)
+          && resource.data.status == 'pending'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'respondedAt'])
+          && request.resource.data.status in ['accepted', 'dismissed']
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.weekId == resource.data.weekId;
+        allow create, delete: if false;
+      }
+
+      // Progression history — written by the client after accepting suggestions
+      match /progressionHistory/{entryId} {
+        allow read: if isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data)
+          && entryId.matches('^' + request.auth.uid + '_.*');
+        allow create: if isOwner(request.resource.data.userId)
+          && isDuelParticipant(get(/databases/$(database)/documents/duels/$(duelId)).data)
+          && request.resource.data.duelId == duelId
+          && request.resource.data.keys().hasOnly(['userId', 'weekId', 'duelId', 'acceptedAt', 'days', 'summary'])
+          && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if false;
       }
     }
 

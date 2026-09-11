@@ -19,6 +19,7 @@ import {
   makeProgressId,
   subscribeToWorkoutProgress,
   toggleExerciseCompletion,
+  rateExerciseDifficulty,
 } from '../firebase/workoutProgress';
 import {
   completeRunSession, getOrCreateRunSession, makeRunId, startRunSession, subscribeToRunSession,
@@ -77,6 +78,7 @@ function Rutina() {
   const [guidedMode, setGuidedMode] = useState(false);
   const [sessionMode, setSessionMode] = useState('normal');
   const [exerciseOverrides, setExerciseOverrides] = useState({});
+  const [pendingRatingId, setPendingRatingId] = useState(null); // exercise id awaiting difficulty rating
   const requestRef = useRef(0);
   const resumedSessionRef = useRef(null);
 
@@ -162,12 +164,23 @@ function Rutina() {
       if (checked && showRest) {
         const index = exercises.findIndex((exercise) => exercise.id === exerciseId);
         if (index >= 0 && index < exercises.length - 1) setRestingExerciseId(exerciseId);
+        // Ask for difficulty rating after completing
+        setPendingRatingId(exerciseId);
       }
     } catch {
       setError('No pudimos actualizar tu progreso.');
     } finally {
       setActionPending(false);
     }
+  }
+
+  async function rateDifficulty(exerciseId, difficulty) {
+    setPendingRatingId(null);
+    if (!duelId) return;
+    try {
+      const progressId = makeProgressId(currentUser.uid, weekId, isoWeekday);
+      setProgress(await rateExerciseDifficulty(duelId, progressId, exerciseId, difficulty));
+    } catch { /* non-critical */ }
   }
 
   async function startRun() {
@@ -322,6 +335,24 @@ function Rutina() {
                           </span>
                         </span>
                       </label>
+                      {/* Difficulty rating prompt — shown right after completing */}
+                      {checked && pendingRatingId === exercise.id && (
+                        <div className="mt-3 pt-3 border-t border-outline-variant/20">
+                          <p className="text-xs text-on-surface-variant mb-2">¿Cómo se sintió?</p>
+                          <div className="flex gap-2">
+                            {[['easy', '💪 Fácil'], ['moderate', '😐 Normal'], ['hard', '😰 Difícil']].map(([value, label]) => (
+                              <button
+                                key={value}
+                                type="button"
+                                onClick={() => rateDifficulty(exercise.id, value)}
+                                className="flex-1 rounded-xl border border-outline-variant/30 bg-surface-container-low py-2 text-xs font-bold text-on-surface tap-scale"
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {reference && openReferenceExerciseId === exercise.id && <FormReferenceModal isOpen exerciseName={exercise.name} reference={reference} onClose={() => setOpenReferenceExerciseId(null)} />}
                     </Card>
                   );

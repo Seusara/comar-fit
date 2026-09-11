@@ -67,41 +67,44 @@ export async function toggleExerciseCompletion(duelId, progressId, exerciseId, c
     if (!snap.exists()) throw new Error('NOT_FOUND');
     const data = snap.data();
 
-    // Find exercise index
     const idx = (data.exercises || []).findIndex((x) => x.id === exerciseId);
     if (idx === -1) throw new Error('EXERCISE_NOT_FOUND');
 
-    // Do not allow adding/removing exercises
     const totalCount = data.totalCount || (data.exercises || []).length;
     if (totalCount !== (data.exercises || []).length) throw new Error('INVALID_TOTAL_COUNT');
 
     const current = !!data.exercises[idx].completed;
-    if (current === !!completed) {
-      // No-op, return current
-      return { progressId: snap.id, ...data };
-    }
+    if (current === !!completed) return { progressId: snap.id, ...data };
 
-    // mutate exercises copy
     const exercises = JSON.parse(JSON.stringify(data.exercises));
     exercises[idx].completed = !!completed;
-    // Do not store serverTimestamp inside array elements (unsupported). Rely on top-level updatedAt.
 
     const completedCount = exercises.filter((e) => e.completed).length;
     const completionRate = Math.round((completedCount / totalCount) * 100);
     const status = completedCount === 0 ? 'pending' : (completionRate >= 80 ? 'completed' : 'partial');
-
     const newRevision = (typeof data.revision === 'number' ? data.revision : 1) + 1;
 
-    const payload = {
-      ...data,
-      exercises,
-      completedCount,
-      completionRate,
-      status,
-      updatedAt: serverTimestamp(),
-      revision: newRevision,
-    };
+    const payload = { ...data, exercises, completedCount, completionRate, status, updatedAt: serverTimestamp(), revision: newRevision };
+    tx.set(ref, payload);
+    return { progressId: snap.id, ...payload };
+  });
+}
 
+export async function rateExerciseDifficulty(duelId, progressId, exerciseId, difficulty) {
+  const ref = progressDocRef(duelId, progressId);
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) throw new Error('NOT_FOUND');
+    const data = snap.data();
+
+    const idx = (data.exercises || []).findIndex((x) => x.id === exerciseId);
+    if (idx === -1) throw new Error('EXERCISE_NOT_FOUND');
+
+    const exercises = JSON.parse(JSON.stringify(data.exercises));
+    exercises[idx].difficulty = difficulty;
+
+    const newRevision = (typeof data.revision === 'number' ? data.revision : 1) + 1;
+    const payload = { ...data, exercises, updatedAt: serverTimestamp(), revision: newRevision };
     tx.set(ref, payload);
     return { progressId: snap.id, ...payload };
   });

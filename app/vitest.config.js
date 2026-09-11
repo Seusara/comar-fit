@@ -8,6 +8,6 @@ export default defineConfig({
     setupFiles: './src/setupTests.js',
     globals: true,
     testTimeout: 10000,
-    exclude: ['**/node_modules/**', '**/dist/**', '**/*.test.mjs'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/*.test.mjs', 'functions/**'],
   },
 });

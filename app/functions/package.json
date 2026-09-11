@@ -6,7 +6,7 @@
     "node": "20"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run --config vitest.config.js"
   },
   "dependencies": {
     "firebase-admin": "^12.5.0",
