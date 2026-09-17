@@ -331,3 +331,56 @@
 :root[data-theme='duolingo'] a[class*="text-primary"] {
   color: #1cb0f6 !important;
 }
+
+/* ─── Duolingo Avatar: round green ring ─── */
+:root[data-theme='duolingo'] .action-gradient {
+  background: #58cc02 !important;
+  color: #ffffff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 0 #46a302;
+  border: none;
+}
+/* Avatar ring specifically needs to stay round */
+:root[data-theme='duolingo'] .rounded-full.action-gradient {
+  border-radius: 9999px !important;
+  box-shadow: none !important;
+  background: #58cc02 !important;
+  padding: 3px !important;
+}
+
+/* ─── Duolingo progress ring colors ─── */
+:root[data-theme='duolingo'] .text-primary-fixed-dim {
+  color: #58cc02 !important;
+}
+:root[data-theme='duolingo'] .text-outline-variant\/20 {
+  color: #e5e5e5 !important;
+}
+
+/* ─── Duolingo streak badge: sticker style ─── */
+:root[data-theme='duolingo'] .bg-surface-container-high {
+  background: #fff8e1 !important;
+}
+
+/* ─── Duolingo active day chip: chunky sticker ─── */
+:root[data-theme='duolingo'] [data-current="true"] {
+  border: 2px solid #58cc02 !important;
+  background: #f0fff0 !important;
+}
+
+/* ─── Duolingo VS badge ─── */
+:root[data-theme='duolingo'] .bg-surface-container-highest {
+  background: #f7f7f7 !important;
+  border: 2px solid #afafaf !important;
+}
+
+/* ─── Duolingo activity list items ─── */
+:root[data-theme='duolingo'] .bg-surface-container-low {
+  background: #f7f7f7 !important;
+  border: 2px solid #e5e5e5 !important;
+}
+
+/* ─── Duolingo secondary container (active nav) ─── */
+:root[data-theme='duolingo'] .bg-secondary-container {
+  background: #d7ffb8 !important;
+  color: #4b4b4b !important;
+}

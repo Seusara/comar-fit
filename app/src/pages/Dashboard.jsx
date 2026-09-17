@@ -303,9 +303,17 @@ function Dashboard() {
     <Layout active="inicio">
       <div className="space-y-6">
 
-        {/* Header */}
-        <section>
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile">Día {dayNumber} de 7</h1>
+        {/* Header — visual, menos texto */}
+        <section className="text-center space-y-2">
+          <p className="text-6xl" role="img" aria-label="Día de entrenamiento">
+            {todayPlan?.type === 'rest' ? '😴' : todayPlan?.type === 'run' ? '🏃' : '💪'}
+          </p>
+          <h1 className="font-display-md text-display-md text-on-surface">
+            Día {dayNumber} <span className="text-primary-fixed-dim">de 7</span>
+          </h1>
+          <p className="text-sm text-on-surface-variant">
+            {todayPlan?.type === 'rest' ? 'Hoy toca descansar' : todayPlan?.type === 'run' ? '¡A correr!' : '¡Vamos a entrenar!'}
+          </p>
         </section>
 
         {/* Banner de sugerencias de progresión — solo al inicio de semana si hay pending */}
@@ -349,38 +357,39 @@ function Dashboard() {
           targetTime={targetTime}
         />
 
-        {/* Actividad reciente — solo los 3 últimos, sin heading repetido */}
+        {/* Actividad reciente — compacta y visual */}
         {workouts.length === 0 ? (
-          <p className="text-on-surface-variant text-sm text-center">
-            Aún no hay actividad. ¡Sube tu primer entrenamiento para empezar el duelo!
-          </p>
+          <Card className="text-center py-8 space-y-2">
+            <p className="text-4xl">🎯</p>
+            <p className="text-on-surface font-bold">¡Sube tu primer entrenamiento!</p>
+            <p className="text-on-surface-variant text-sm">Empieza el duelo ahora</p>
+          </Card>
         ) : (
           <section aria-label="Actividad reciente">
             <h2 className="font-label-md text-on-surface uppercase tracking-widest text-xs mb-3">
-              Actividad reciente
+              Reciente
             </h2>
-            <ul className="space-y-2">
+            <div className="flex gap-2 overflow-x-auto pb-2">
               {recentWorkouts.map((workout) => {
                 const performedAt = workout.performedAt?.toDate?.() ?? workout.performedAt;
                 const dateStr = performedAt instanceof Date
                   ? performedAt.toISOString().slice(0, 10)
                   : String(performedAt ?? '');
                 return (
-                  <li
+                  <div
                     key={workout.workoutId}
-                    className="flex items-center justify-between gap-4 bg-surface-container-low p-3 rounded-xl border border-outline-variant/10"
+                    className="flex-shrink-0 w-36 bg-surface-container-low p-3 rounded-xl border border-outline-variant/10 text-center"
                   >
-                    <div>
-                      <p className="text-on-surface text-sm font-bold">{formatWorkoutTitle(workout)}</p>
-                      <p className="text-on-surface-variant text-xs mt-0.5">{dateStr}</p>
-                    </div>
+                    <p className="text-2xl mb-1">🏋️</p>
+                    <p className="text-on-surface text-xs font-bold truncate">{formatWorkoutTitle(workout)}</p>
+                    <p className="text-on-surface-variant text-[10px] mt-0.5">{dateStr}</p>
                     {typeof workout.totalMinutes === 'number' && (
-                      <span className="text-on-surface-variant text-xs shrink-0">{workout.totalMinutes} min</span>
+                      <p className="text-primary-fixed-dim text-xs font-bold mt-1">{workout.totalMinutes} min</p>
                     )}
-                  </li>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           </section>
         )}
 
