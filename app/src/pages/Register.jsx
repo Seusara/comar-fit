@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { deleteUser } from 'firebase/auth';
 import { registerUser } from '../firebase/auth';
 import { createUserDocument } from '../firebase/firestore';
+import FluidOrb from '../components/FluidOrb';
 
 const inputClass =
   'w-full bg-surface-container-low border border-outline-variant/30 rounded-lg px-3 py-2 text-on-surface';
@@ -34,8 +35,6 @@ function Register() {
     setError('');
     setSubmitting(true);
 
-    // Normalize once so the Auth account and the stored user document agree,
-    // and so partner lookup by email always matches.
     const normalizedEmail = form.email.trim().toLowerCase();
 
     let credential;
@@ -59,8 +58,6 @@ function Register() {
       });
       navigate('/connect-partner');
     } catch (err) {
-      // Roll back the just-created auth account, otherwise the user is left
-      // with an account that has no profile document and no way to recover.
       await deleteUser(credential.user).catch(() => {});
       setError('No pudimos crear tu cuenta. Verifica tus datos e intenta de nuevo.');
     } finally {
@@ -69,35 +66,58 @@ function Register() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6">
-      <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4 glass-card rounded-xl p-6">
-        <h1 className="font-headline-lg text-on-surface">Crear tu cuenta</h1>
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Background orbs */}
+      <div className="absolute -top-16 -right-16 opacity-25 pointer-events-none">
+        <FluidOrb size={280} color="#ad00fe" />
+      </div>
+      <div className="absolute -bottom-24 -left-24 opacity-20 pointer-events-none">
+        <FluidOrb size={320} color="#00dbe9" />
+      </div>
 
-        <label className="block" htmlFor="displayName">Nombre completo</label>
+      {/* Logo orb */}
+      <div className="mb-5 relative z-10">
+        <FluidOrb size={80} color="#00dbe9" />
+      </div>
+
+      <form onSubmit={handleSubmit} className="w-full max-w-md space-y-3 glass-card rounded-xl p-6 relative z-10">
+        <h1 className="font-headline-lg text-on-surface text-center">Crear tu cuenta</h1>
+
+        <label className="block text-on-surface-variant text-sm" htmlFor="displayName">Nombre completo</label>
         <input id="displayName" name="displayName" type="text" required value={form.displayName} onChange={handleChange} className={inputClass} />
 
-        <label className="block" htmlFor="email">Email</label>
+        <label className="block text-on-surface-variant text-sm" htmlFor="email">Email</label>
         <input id="email" name="email" type="email" required value={form.email} onChange={handleChange} className={inputClass} />
 
-        <label className="block" htmlFor="password">Contraseña</label>
+        <label className="block text-on-surface-variant text-sm" htmlFor="password">Contraseña</label>
         <input id="password" name="password" type="password" required minLength={6} value={form.password} onChange={handleChange} className={inputClass} />
 
-        <label className="block" htmlFor="gender">Género</label>
-        <select id="gender" name="gender" value={form.gender} onChange={handleChange} className={inputClass}>
-          <option value="M">Masculino</option>
-          <option value="F">Femenino</option>
-        </select>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-on-surface-variant text-sm" htmlFor="gender">Género</label>
+            <select id="gender" name="gender" value={form.gender} onChange={handleChange} className={inputClass}>
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-on-surface-variant text-sm" htmlFor="age">Edad</label>
+            <input id="age" name="age" type="number" required min={1} value={form.age} onChange={handleChange} className={inputClass} />
+          </div>
+        </div>
 
-        <label className="block" htmlFor="age">Edad</label>
-        <input id="age" name="age" type="number" required min={1} value={form.age} onChange={handleChange} className={inputClass} />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-on-surface-variant text-sm" htmlFor="weight">Peso (kg)</label>
+            <input id="weight" name="weight" type="number" required min={1} value={form.weight} onChange={handleChange} className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-on-surface-variant text-sm" htmlFor="height">Altura (cm)</label>
+            <input id="height" name="height" type="number" required min={1} value={form.height} onChange={handleChange} className={inputClass} />
+          </div>
+        </div>
 
-        <label className="block" htmlFor="weight">Peso (kg)</label>
-        <input id="weight" name="weight" type="number" required min={1} value={form.weight} onChange={handleChange} className={inputClass} />
-
-        <label className="block" htmlFor="height">Altura (cm)</label>
-        <input id="height" name="height" type="number" required min={1} value={form.height} onChange={handleChange} className={inputClass} />
-
-        <label className="block" htmlFor="experienceLevel">Nivel de experiencia</label>
+        <label className="block text-on-surface-variant text-sm" htmlFor="experienceLevel">Nivel de experiencia</label>
         <select id="experienceLevel" name="experienceLevel" value={form.experienceLevel} onChange={handleChange} className={inputClass}>
           <option value="Beginner">Principiante</option>
           <option value="Intermediate">Intermedio</option>
@@ -110,7 +130,7 @@ function Register() {
           Crear cuenta
         </button>
 
-        <p className="text-on-surface-variant text-sm">
+        <p className="text-on-surface-variant text-sm text-center">
           ¿Ya tienes cuenta? <Link to="/login" className="text-primary-fixed-dim">Inicia sesión</Link>
         </p>
       </form>

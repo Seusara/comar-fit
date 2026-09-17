@@ -20,6 +20,7 @@ import CountdownTimer from '../components/CountdownTimer';
 import WeeklyPlanCard from '../components/WeeklyPlanCard';
 import PageSkeleton from '../components/PageSkeleton';
 import ProgressionSuggestions from '../components/ProgressionSuggestions';
+import FluidOrb from '../components/FluidOrb';
 import { getPendingSuggestion, acceptSuggestion, dismissSuggestion } from '../firebase/suggestions';
 import { generatePlanIfMissing, getPlan } from '../firebase/plans';
 import {
@@ -304,10 +305,13 @@ function Dashboard() {
       <div className="space-y-6">
 
         {/* Header — visual, menos texto */}
-        <section className="text-center space-y-2">
-          <p className="text-6xl" role="img" aria-label="Día de entrenamiento">
-            {todayPlan?.type === 'rest' ? '😴' : todayPlan?.type === 'run' ? '🏃' : '💪'}
-          </p>
+        <section className="text-center space-y-3">
+          <div className="flex justify-center">
+            <FluidOrb
+              size={90}
+              color={todayPlan?.type === 'rest' ? '#6c5f51' : todayPlan?.type === 'run' ? '#1cb0f6' : '#00dbe9'}
+            />
+          </div>
           <h1 className="font-display-md text-display-md text-on-surface">
             Día {dayNumber} <span className="text-primary-fixed-dim">de 7</span>
           </h1>
