@@ -1,0 +1,117 @@
+.dock-outer {
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.dock-panel {
+  position: fixed;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  width: fit-content;
+  gap: 0.5rem;
+  border-radius: 1.25rem;
+  background-color: rgb(var(--glass) / var(--glass-alpha));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgb(var(--border) / 0.3);
+  padding: 0 0.5rem 0.5rem;
+  z-index: 50;
+}
+
+.dock-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background-color: rgb(var(--surface-secondary) / 0.8);
+  border: 1px solid rgb(var(--border) / 0.2);
+  cursor: pointer;
+  outline: none;
+  color: rgb(var(--text-secondary));
+  transition: color 0.15s ease;
+}
+
+.dock-item:hover,
+.dock-item:focus-visible {
+  color: rgb(var(--primary));
+}
+
+.dock-item[data-active="true"] {
+  background-color: rgb(var(--primary) / 0.15);
+  color: rgb(var(--primary));
+  border-color: rgb(var(--primary) / 0.3);
+}
+
+.dock-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dock-label {
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  width: fit-content;
+  white-space: pre;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(var(--border) / 0.3);
+  background-color: rgb(var(--glass) / 0.95);
+  backdrop-filter: blur(12px);
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgb(var(--text-primary));
+  transform: translateX(-50%);
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* ─── Duolingo override: sticker dock ─── */
+:root[data-theme='duolingo'] .dock-panel {
+  background: #ffffff;
+  backdrop-filter: none;
+  border: 2px solid #afafaf;
+  box-shadow: 0 -2px 0 rgba(175, 175, 175, 0.3);
+}
+:root[data-theme='duolingo'] .dock-item {
+  background: #f7f7f7;
+  border: 2px solid #e5e5e5;
+}
+:root[data-theme='duolingo'] .dock-item[data-active="true"] {
+  background: #d7ffb8;
+  border-color: #58cc02;
+  color: #4b4b4b;
+}
+:root[data-theme='duolingo'] .dock-label {
+  background: #ffffff;
+  border: 2px solid #afafaf;
+  color: #4b4b4b;
+}
+
+/* ─── Oryzo override: warm editorial ─── */
+:root[data-theme='oryzo'] .dock-panel {
+  background: rgba(16, 9, 4, 0.92);
+  backdrop-filter: none;
+  border: 1px dashed #40372e;
+}
+:root[data-theme='oryzo'] .dock-item {
+  background: rgba(56, 36, 22, 0.7);
+  border: 1px solid #40372e;
+}
+:root[data-theme='oryzo'] .dock-item[data-active="true"] {
+  background: #382416;
+  border-color: #ffedd7;
+  color: #ffedd7;
+}
+:root[data-theme='oryzo'] .dock-label {
+  background: rgba(16, 9, 4, 0.95);
+  border: 1px dashed #40372e;
+  color: #ffedd7;
+}
