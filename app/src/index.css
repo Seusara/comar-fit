@@ -109,6 +109,29 @@
     --glass-alpha: 0.92;
   }
 
+  /* ─── Duolingo Theme ─── */
+  /* Paper white canvas, sticker-style components, green accent */
+  :root[data-theme='duolingo'] {
+    --background: 255 255 255;
+    --surface: 255 255 255;
+    --surface-secondary: 247 247 247;
+    --surface-elevated: 240 240 240;
+    --text-primary: 75 75 75;
+    --text-secondary: 119 119 119;
+    --primary: 88 204 2;
+    --primary-soft: 165 237 110;
+    --secondary: 28 176 246;
+    --secondary-strong: 28 176 246;
+    --accent: 88 204 2;
+    --border: 175 175 175;
+    --success: 88 204 2;
+    --danger: 234 67 53;
+    --gradient-start: #58cc02;
+    --gradient-end: #58cc02;
+    --glass: 255 255 255;
+    --glass-alpha: 1;
+  }
+
   :root {
     --on-error-container: var(--text-primary);
     --secondary-fixed-dim: var(--secondary);
@@ -161,6 +184,7 @@
   :root[data-theme='pink'] { --on-action: 255 255 255; }
   :root[data-theme='light'],
   :root[data-theme='pink-light'] { --on-action: 255 255 255; color-scheme: light; }
+  :root[data-theme='duolingo'] { --on-action: 255 255 255; color-scheme: light; }
 
   body {
     background-color: rgb(var(--background));
@@ -172,23 +196,45 @@
   .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
+
+  /* ─── Glass card: stays glass on dark themes, flat sticker on Duolingo ─── */
   .glass-card {
     background: rgb(var(--glass) / var(--glass-alpha));
     backdrop-filter: blur(12px);
     border: 1px solid rgb(var(--border) / 0.22);
   }
+  :root[data-theme='duolingo'] .glass-card {
+    background: rgb(255 255 255);
+    backdrop-filter: none;
+    border: 2px solid rgb(var(--border));
+    box-shadow: 0 4px 0 rgb(var(--border) / 0.3);
+  }
+
+  /* ─── Action gradient: solid green on Duolingo ─── */
   .action-gradient {
     background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
   }
+  :root[data-theme='duolingo'] .action-gradient {
+    background: #58cc02;
+  }
+
   .app-bottom-nav { box-shadow: 0 -4px 10px rgb(var(--background) / 0.45); }
+  :root[data-theme='duolingo'] .app-bottom-nav {
+    box-shadow: 0 -2px 0 rgb(var(--border) / 0.2);
+  }
+
   .primary-glow { box-shadow: 0 0 18px rgb(var(--primary) / 0.24); }
   .secondary-glow { box-shadow: 0 0 18px rgb(var(--secondary-strong) / 0.24); }
+  :root[data-theme='duolingo'] .primary-glow,
+  :root[data-theme='duolingo'] .secondary-glow { box-shadow: none; }
+
   .duel-primary-aura { background: radial-gradient(circle at 30% 20%, rgb(var(--primary) / 0.10), transparent 65%); }
   .duel-secondary-aura { background: radial-gradient(circle at 70% 20%, rgb(var(--secondary-strong) / 0.10), transparent 65%); }
+  :root[data-theme='duolingo'] .duel-primary-aura,
+  :root[data-theme='duolingo'] .duel-secondary-aura { background: none; }
+
   .render-lazy { content-visibility: auto; contain-intrinsic-size: auto 180px; }
-  /* Tap feedback (scale-down on :active) that respects prefers-reduced-motion.
-     No transform/transition is applied at all unless the user's system
-     allows motion, rather than just skipping the animation duration. */
+
   .tap-scale {
     transition: none;
   }
@@ -200,4 +246,88 @@
       transform: scale(0.96);
     }
   }
+
+  /* ─── Duolingo sticker button override ─── */
+  :root[data-theme='duolingo'] .tap-scale {
+    border-radius: 12px;
+  }
+}
+
+/* ─── Duolingo font swap: Nunito for display, Inter stays for body ─── */
+:root[data-theme='duolingo'] {
+  --duo-display: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  --duo-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+:root[data-theme='duolingo'] .font-headline-lg,
+:root[data-theme='duolingo'] .font-display-lg,
+:root[data-theme='duolingo'] .font-display-md,
+:root[data-theme='duolingo'] .font-headline-lg-mobile,
+:root[data-theme='duolingo'] .font-stats-num {
+  font-family: var(--duo-display) !important;
+}
+
+:root[data-theme='duolingo'] h1,
+:root[data-theme='duolingo'] h2,
+:root[data-theme='duolingo'] h3 {
+  font-family: var(--duo-display) !important;
+  letter-spacing: -0.02em;
+}
+
+/* Duolingo sticker inputs: thick borders, no glass */
+:root[data-theme='duolingo'] input,
+:root[data-theme='duolingo'] select,
+:root[data-theme='duolingo'] textarea {
+  background: #ffffff !important;
+  border: 2px solid #afafaf !important;
+  border-radius: 12px !important;
+  color: #4b4b4b !important;
+}
+:root[data-theme='duolingo'] input:focus,
+:root[data-theme='duolingo'] select:focus,
+:root[data-theme='duolingo'] textarea:focus {
+  border-color: #1cb0f6 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Duolingo green CTA: no gradients, flat solid with bottom shadow */
+:root[data-theme='duolingo'] .action-gradient {
+  background: #58cc02 !important;
+  color: #ffffff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 0 #46a302;
+  border: none;
+}
+:root[data-theme='duolingo'] .action-gradient:active {
+  box-shadow: 0 2px 0 #46a302;
+  transform: translateY(2px);
+}
+
+/* Duolingo nav labels: uppercase tracked */
+:root[data-theme='duolingo'] .font-label-md {
+  text-transform: uppercase;
+  letter-spacing: 0.053em;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* Duolingo bottom nav: paper white, no blur */
+:root[data-theme='duolingo'] nav[aria-label="Navegación principal"] {
+  background: rgb(255 255 255) !important;
+  backdrop-filter: none !important;
+  border-top: 2px solid #e5e5e5 !important;
+}
+
+/* Duolingo header: paper white */
+:root[data-theme='duolingo'] header {
+  background: rgb(255 255 255 / 0.98) !important;
+  backdrop-filter: none !important;
+  border-bottom: 2px solid #e5e5e5 !important;
+  box-shadow: none !important;
+}
+
+/* Links in Duolingo use spark blue */
+:root[data-theme='duolingo'] a[class*="text-primary"] {
+  color: #1cb0f6 !important;
 }

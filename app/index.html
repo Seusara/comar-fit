@@ -9,7 +9,7 @@
     <script>
       try {
         const savedTheme = localStorage.getItem('comar-fit:theme');
-        const preference = ['system', 'original', 'dark', 'light', 'pink', 'pink-light'].includes(savedTheme)
+        const preference = ['system', 'original', 'dark', 'light', 'pink', 'pink-light', 'duolingo'].includes(savedTheme)
           ? savedTheme : 'original';
         document.documentElement.dataset.theme = preference === 'system'
           ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -22,7 +22,7 @@
     <link rel="icon" type="image/png" href="/comar-fit-favicon.png" />
     <link rel="apple-touch-icon" href="/comar-fit-app-icon.png" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@100..900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@100..900&family=Nunito:wght@400;700;800;900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
       rel="stylesheet"
     />
   </head>

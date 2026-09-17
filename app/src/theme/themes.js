@@ -8,6 +8,7 @@ export const THEMES = [
   { id: 'light', label: 'Claro', swatches: ['#f4faff', '#ffffff', '#38bdf8', '#3b82f6'] },
   { id: 'pink', label: 'Rosa', swatches: ['#170b16', '#32152d', '#ff4fa3', '#a78bfa'] },
   { id: 'pink-light', label: 'Rosa claro', swatches: ['#fff7fb', '#ffffff', '#e72f87', '#be185d'] },
+  { id: 'duolingo', label: 'Duolingo', swatches: ['#ffffff', '#58cc02', '#1cb0f6', '#4b4b4b'] },
 ];
 
 const VALID_THEMES = new Set(THEMES.map((theme) => theme.id));
@@ -31,7 +32,7 @@ export function applyTheme(value) {
     : preference;
   document.documentElement.dataset.theme = theme;
   document.documentElement.dataset.themePreference = preference;
-  document.documentElement.style.colorScheme = ['light', 'pink-light'].includes(theme) ? 'light' : 'dark';
+  document.documentElement.style.colorScheme = ['light', 'pink-light', 'duolingo'].includes(theme) ? 'light' : 'dark';
   return preference;
 }
 
