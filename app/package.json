@@ -7,11 +7,17 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "cap:sync": "vite build && npx cap sync android",
+    "cap:open": "npx cap open android",
+    "cap:run": "npx cap run android",
     "test": "node scripts/run-tests.mjs",
     "test:watch": "vitest",
     "emulators": "node scripts/start-emulators.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
     "firebase": "^10.13.0",
     "motion": "^13.4.0",
     "react": "^18.3.1",

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Comar-Fit</string>
+    <string name="title_activity_main">Comar-Fit</string>
+    <string name="package_name">com.comark.fit</string>
+    <string name="custom_url_scheme">com.comark.fit</string>
+</resources>

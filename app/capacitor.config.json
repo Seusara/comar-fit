@@ -1,0 +1,20 @@
+{
+  "appId": "com.comark.fit",
+  "appName": "Comar-Fit",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#131313",
+    "allowMixedContent": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 1500,
+      "backgroundColor": "#131313",
+      "showSpinner": false
+    }
+  }
+}
