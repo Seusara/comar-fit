@@ -9,6 +9,7 @@ export const THEMES = [
   { id: 'pink', label: 'Rosa', swatches: ['#170b16', '#32152d', '#ff4fa3', '#a78bfa'] },
   { id: 'pink-light', label: 'Rosa claro', swatches: ['#fff7fb', '#ffffff', '#e72f87', '#be185d'] },
   { id: 'duolingo', label: 'Duolingo', swatches: ['#ffffff', '#58cc02', '#1cb0f6', '#4b4b4b'] },
+  { id: 'oryzo', label: 'Oryzo', swatches: ['#100904', '#382416', '#ffedd7', '#dc5000'] },
 ];
 
 const VALID_THEMES = new Set(THEMES.map((theme) => theme.id));

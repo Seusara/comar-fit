@@ -132,6 +132,29 @@
     --glass-alpha: 1;
   }
 
+  /* ─── Oryzo Theme ─── */
+  /* Warm dark editorial, cream typography, museum-artifact presentation */
+  :root[data-theme='oryzo'] {
+    --background: 16 9 4;
+    --surface: 16 9 4;
+    --surface-secondary: 56 36 22;
+    --surface-elevated: 64 55 46;
+    --text-primary: 255 237 215;
+    --text-secondary: 108 95 81;
+    --primary: 255 237 215;
+    --primary-soft: 255 237 215;
+    --secondary: 220 80 0;
+    --secondary-strong: 220 80 0;
+    --accent: 220 80 0;
+    --border: 64 55 46;
+    --success: 165 237 110;
+    --danger: 220 80 0;
+    --gradient-start: #382416;
+    --gradient-end: #382416;
+    --glass: 56 36 22;
+    --glass-alpha: 0.85;
+  }
+
   :root {
     --on-error-container: var(--text-primary);
     --secondary-fixed-dim: var(--secondary);
@@ -185,6 +208,7 @@
   :root[data-theme='light'],
   :root[data-theme='pink-light'] { --on-action: 255 255 255; color-scheme: light; }
   :root[data-theme='duolingo'] { --on-action: 255 255 255; color-scheme: light; }
+  :root[data-theme='oryzo'] { --on-action: 16 9 4; color-scheme: dark; }
 
   body {
     background-color: rgb(var(--background));
@@ -383,4 +407,154 @@
 :root[data-theme='duolingo'] .bg-secondary-container {
   background: #d7ffb8 !important;
   color: #4b4b4b !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ORYZO THEME — Warm dark editorial, cream on walnut
+   ═══════════════════════════════════════════════════════ */
+
+/* Font swap: Inter at weight 500 uppercase for everything */
+:root[data-theme='oryzo'] {
+  --oryzo-font: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+:root[data-theme='oryzo'] .font-headline-lg,
+:root[data-theme='oryzo'] .font-display-lg,
+:root[data-theme='oryzo'] .font-display-md,
+:root[data-theme='oryzo'] .font-headline-lg-mobile,
+:root[data-theme='oryzo'] .font-stats-num,
+:root[data-theme='oryzo'] .font-label-md,
+:root[data-theme='oryzo'] .font-body-md {
+  font-family: var(--oryzo-font) !important;
+}
+
+:root[data-theme='oryzo'] h1,
+:root[data-theme='oryzo'] h2,
+:root[data-theme='oryzo'] h3 {
+  font-family: var(--oryzo-font) !important;
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: normal;
+}
+
+/* Oryzo body: weight 500 uppercase default, labels included */
+:root[data-theme='oryzo'] .font-label-md {
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: normal;
+}
+
+/* Glass card → warm bark surface, no blur, no shadow */
+:root[data-theme='oryzo'] .glass-card {
+  background: rgba(56, 36, 22, 0.85) !important;
+  backdrop-filter: none !important;
+  border: 1px solid #40372e !important;
+  box-shadow: none !important;
+}
+
+/* Action gradient → solid bark brown */
+:root[data-theme='oryzo'] .action-gradient {
+  background: #382416 !important;
+  color: #ffedd7 !important;
+  border-radius: 36px !important;
+  box-shadow: none !important;
+  border: none;
+}
+
+/* Avatar ring → warm cream border, no glow */
+:root[data-theme='oryzo'] .rounded-full.action-gradient {
+  border-radius: 9999px !important;
+  background: #ffedd7 !important;
+  box-shadow: none !important;
+  padding: 2px !important;
+}
+
+/* Header → walnut shadow, no blur, dashed bottom border */
+:root[data-theme='oryzo'] header {
+  background: rgba(16, 9, 4, 0.95) !important;
+  backdrop-filter: none !important;
+  border-bottom: 1px dashed #40372e !important;
+  box-shadow: none !important;
+}
+
+/* Bottom nav → walnut, dashed top border */
+:root[data-theme='oryzo'] nav[aria-label="Navegación principal"] {
+  background: rgb(16 9 4) !important;
+  backdrop-filter: none !important;
+  border-top: 1px dashed #40372e !important;
+  box-shadow: none !important;
+}
+
+/* Progress ring → cream */
+:root[data-theme='oryzo'] .text-primary-fixed-dim {
+  color: #ffedd7 !important;
+}
+
+/* Active day → warm border */
+:root[data-theme='oryzo'] [data-current="true"] {
+  border: 1px solid #ffedd7 !important;
+  background: rgba(56, 36, 22, 0.5) !important;
+}
+
+/* Kill all glows and auras */
+:root[data-theme='oryzo'] .primary-glow,
+:root[data-theme='oryzo'] .secondary-glow,
+:root[data-theme='oryzo'] .duel-primary-aura,
+:root[data-theme='oryzo'] .duel-secondary-aura {
+  box-shadow: none !important;
+  background: none !important;
+}
+
+/* Inputs → underline only, no box */
+:root[data-theme='oryzo'] input,
+:root[data-theme='oryzo'] select,
+:root[data-theme='oryzo'] textarea {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid #ffedd7 !important;
+  border-radius: 0 !important;
+  color: #ffedd7 !important;
+}
+:root[data-theme='oryzo'] input:focus,
+:root[data-theme='oryzo'] select:focus,
+:root[data-theme='oryzo'] textarea:focus {
+  border-bottom-color: #dc5000 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Links → ember accent */
+:root[data-theme='oryzo'] a[class*="text-primary"] {
+  color: #dc5000 !important;
+}
+
+/* Streak badge → bark background */
+:root[data-theme='oryzo'] .bg-surface-container-high {
+  background: #382416 !important;
+}
+
+/* VS badge → bark */
+:root[data-theme='oryzo'] .bg-surface-container-highest {
+  background: #382416 !important;
+  border: 1px dashed #40372e !important;
+}
+
+/* Activity items → bark */
+:root[data-theme='oryzo'] .bg-surface-container-low {
+  background: rgba(56, 36, 22, 0.6) !important;
+  border: 1px solid #40372e !important;
+}
+
+/* Active nav → bark fill */
+:root[data-theme='oryzo'] .bg-secondary-container {
+  background: #382416 !important;
+  color: #ffedd7 !important;
+}
+
+/* Section dividers → dashed */
+:root[data-theme='oryzo'] .border-outline-variant\/10,
+:root[data-theme='oryzo'] .border-outline-variant\/20,
+:root[data-theme='oryzo'] .border-outline-variant\/30 {
+  border-style: dashed !important;
+  border-color: #40372e !important;
 }

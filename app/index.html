@@ -9,7 +9,7 @@
     <script>
       try {
         const savedTheme = localStorage.getItem('comar-fit:theme');
-        const preference = ['system', 'original', 'dark', 'light', 'pink', 'pink-light', 'duolingo'].includes(savedTheme)
+        const preference = ['system', 'original', 'dark', 'light', 'pink', 'pink-light', 'duolingo', 'oryzo'].includes(savedTheme)
           ? savedTheme : 'original';
         document.documentElement.dataset.theme = preference === 'system'
           ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
