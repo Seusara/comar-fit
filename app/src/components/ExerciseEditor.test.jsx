@@ -51,9 +51,9 @@ describe('validateExercises (pure)', () => {
 
 describe('ExerciseEditor (controlled)', () => {
   it('offers exercises that can arrive from the daily routine', () => {
-    render(<Harness initial={[{ ...createEmptyExercise(), exerciseId: 'Marcha activa', name: 'Marcha activa' }]} />);
-    expect(screen.getByLabelText('Ejercicio')).toHaveValue('Marcha activa');
-    expect(screen.getByRole('option', { name: 'Estiramiento general' })).toBeInTheDocument();
+    render(<Harness initial={[{ ...createEmptyExercise(), exerciseId: 'Rodillas altas', name: 'Rodillas altas' }]} />);
+    expect(screen.getByLabelText('Ejercicio')).toHaveValue('Rodillas altas');
+    expect(screen.getByRole('option', { name: 'Estiramiento dinámico completo' })).toBeInTheDocument();
   });
 
   it('renders one row per exercise from props, not internal state', () => {

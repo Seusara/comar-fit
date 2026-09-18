@@ -119,16 +119,21 @@ export default function GuidedWorkout({
 
   const overall = Math.round(((index + currentSets / targetSets) / exercises.length) * 100);
   return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-background p-4 sm:p-8" role="dialog" aria-modal="true" aria-label="Entrenamiento guiado">
-      <div className="mx-auto max-w-xl space-y-5">
+    <div
+      className="fixed inset-0 z-[100] overflow-y-auto bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-8 sm:pb-[calc(2rem+env(safe-area-inset-bottom))]"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Entrenamiento guiado"
+    >
+      <div className="mx-auto max-w-xl space-y-3">
         <header className="flex items-center justify-between gap-4">
           <Button variant="secondary" onClick={requestClose}>Guardar y salir</Button>
-          <div className="text-center">
-            <p className="text-xs uppercase tracking-widest text-on-surface-variant">Tiempo activo</p>
-            <p className="font-headline-lg text-2xl tabular-nums">{formatClock(elapsedSeconds)}</p>
-          </div>
           <Button variant="secondary" onClick={() => setRunning((value) => !value)}>{running ? 'Pausar' : 'Continuar'}</Button>
         </header>
+        <p className="flex items-center justify-center gap-1 text-xs text-on-surface-variant tabular-nums" aria-label={`Tiempo activo: ${formatClock(elapsedSeconds)}`}>
+          <span className="material-symbols-outlined text-sm" aria-hidden="true">schedule</span>
+          {formatClock(elapsedSeconds)}
+        </p>
         <Card className="text-center space-y-5">
           <div className="mx-auto w-fit"><ProgressRing percentage={overall} size={104} label="Progreso guiado" /></div>
           <div>

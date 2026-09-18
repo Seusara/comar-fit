@@ -1,8 +1,34 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useReducedMotion } from 'motion/react';
+import { getAssetUrl } from '@bryllim/workout-guide';
+
+const SPRITE_FRAME_COUNT = 3;
+const SPRITE_FRAME_INTERVAL_MS = 900;
 
 function FormReferenceModal({ isOpen, exerciseName, reference, onClose }) {
   const dialogRef = useRef(null);
+  const reducedMotion = useReducedMotion();
+  const [frameIndex, setFrameIndex] = useState(0);
+  const [autoplayTick, setAutoplayTick] = useState(0);
+  const isSprite = reference?.formReferenceType === 'sprite';
+
+  useEffect(() => {
+    setFrameIndex(0);
+  }, [reference?.spriteSlug]);
+
+  useEffect(() => {
+    if (!isOpen || !isSprite || reducedMotion) return undefined;
+    const timer = setInterval(() => {
+      setFrameIndex((current) => (current + 1) % SPRITE_FRAME_COUNT);
+    }, SPRITE_FRAME_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [isOpen, isSprite, reducedMotion, reference?.spriteSlug, autoplayTick]);
+
+  function goToFrame(next) {
+    setFrameIndex(next);
+    setAutoplayTick((value) => value + 1);
+  }
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -48,7 +74,7 @@ function FormReferenceModal({ isOpen, exerciseName, reference, onClose }) {
   if (!isOpen) return null;
 
   const tips = reference?.tips ?? [];
-  const hasVideo = reference?.formReferenceType !== 'text_tips' && Boolean(reference?.formReferenceUrl);
+  const hasVideo = Boolean(reference?.formReferenceUrl);
 
   return createPortal(
     <div
@@ -79,7 +105,49 @@ function FormReferenceModal({ isOpen, exerciseName, reference, onClose }) {
           </button>
         </div>
 
-        {hasVideo ? (
+        {isSprite ? (
+          <div className="mt-4">
+            <div className="relative mx-auto aspect-square w-48 overflow-hidden rounded-lg bg-surface-container-low">
+              <img
+                src={getAssetUrl(reference.spriteSlug, frameIndex + 1)}
+                alt={`${exerciseName} — postura ${frameIndex + 1} de ${SPRITE_FRAME_COUNT}`}
+                className="h-full w-full object-contain"
+                loading="lazy"
+              />
+            </div>
+            <div className="mt-2 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => goToFrame((frameIndex - 1 + SPRITE_FRAME_COUNT) % SPRITE_FRAME_COUNT)}
+                aria-label="Postura anterior"
+                className="min-h-[44px] min-w-[44px] rounded-lg text-on-surface-variant focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim"
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+              </button>
+              <div className="flex gap-1" role="tablist" aria-label="Postura">
+                {Array.from({ length: SPRITE_FRAME_COUNT }, (_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    role="tab"
+                    aria-selected={i === frameIndex}
+                    aria-label={`Postura ${i + 1}`}
+                    onClick={() => goToFrame(i)}
+                    className={`h-2 w-2 rounded-full ${i === frameIndex ? 'bg-primary-fixed-dim' : 'bg-outline-variant/40'}`}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => goToFrame((frameIndex + 1) % SPRITE_FRAME_COUNT)}
+                aria-label="Siguiente postura"
+                className="min-h-[44px] min-w-[44px] rounded-lg text-on-surface-variant focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim"
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+              </button>
+            </div>
+          </div>
+        ) : hasVideo ? (
           <iframe
             title={`Video de técnica: ${exerciseName}`}
             src={reference.formReferenceUrl}
