@@ -89,11 +89,9 @@ describe('Rutina semanal', () => {
     await user.click(await screen.findByRole('button', { name: 'Iniciar rutina' }));
     expect(screen.getByRole('heading', { name: 'Sentadillas' })).toBeInTheDocument();
 
-    // Sentadillas tiene 3 series: dos series intermedias con descanso, luego la serie final completa el ejercicio.
+    // Sentadillas tiene 3 series: no hay descanso entre series, solo la serie final completa el ejercicio.
     await user.click(screen.getByRole('button', { name: 'Completar serie' }));
-    await user.click(screen.getByRole('button', { name: 'Saltar descanso' }));
     await user.click(screen.getByRole('button', { name: 'Completar serie' }));
-    await user.click(screen.getByRole('button', { name: 'Saltar descanso' }));
     await user.click(screen.getByRole('button', { name: 'Completar ejercicio' }));
     expect(toggleExerciseCompletion).toHaveBeenCalledWith('duel-1', 'aaron_2026-W32_d1', 'squat', true);
 

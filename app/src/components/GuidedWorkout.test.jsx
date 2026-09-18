@@ -20,7 +20,6 @@ describe('GuidedWorkout', () => {
     expect(screen.getByRole('heading', { name: 'Flexiones' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Completar serie' }));
     expect(onCompleteExercise).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Saltar descanso' }));
     await user.click(screen.getByRole('button', { name: 'Completar ejercicio' }));
 
     expect(onCompleteExercise).toHaveBeenCalledWith('pushups');

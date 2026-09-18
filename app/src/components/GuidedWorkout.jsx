@@ -85,10 +85,7 @@ export default function GuidedWorkout({
     if (pending) return;
     const nextSets = Math.min(currentSets + 1, targetSets);
     setCompletedSets((value) => ({ ...value, [exercise.id]: nextSets }));
-    if (nextSets < targetSets) {
-      setRestAfterSet({ nextIndex: index, nextLabel: exercise.name });
-      return;
-    }
+    if (nextSets < targetSets) return;
     setPending(true);
     try {
       await onCompleteExercise(exercise.id);
