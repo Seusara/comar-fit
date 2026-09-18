@@ -3,6 +3,16 @@ import Button from './Button';
 import Card from './Card';
 import ProgressRing from './ProgressRing';
 import RestTimer from './RestTimer';
+import FormReferenceModal from './FormReferenceModal';
+import EmojiBurstButton, { EMOJI_DATA } from './EmojiBurstButton';
+import { EmojiProvider } from 'react-apple-emojis';
+import { findExerciseReference } from '../routines/catalog';
+
+const DIFFICULTY_OPTIONS = [
+  { value: 'easy', emoji: 'flexed-biceps', label: 'Fácil' },
+  { value: 'moderate', emoji: 'neutral-face', label: 'Normal' },
+  { value: 'hard', emoji: 'anxious-face-with-sweat', label: 'Difícil' },
+];
 
 function formatClock(seconds) {
   const safe = Math.max(0, Number(seconds) || 0);
@@ -13,7 +23,9 @@ function readSession(key) {
   try { return JSON.parse(localStorage.getItem(key)) ?? {}; } catch { return {}; }
 }
 
-export default function GuidedWorkout({ sessionId, exercises, progressById, onCompleteExercise, onFinish, onClose }) {
+export default function GuidedWorkout({
+  sessionId, exercises, progressById, onCompleteExercise, onFinish, onClose, onSubstitute, onRateDifficulty,
+}) {
   const storageKey = `comar-fit:guided:${sessionId}`;
   const restored = useMemo(() => readSession(storageKey), [storageKey]);
   const firstPending = Math.max(0, exercises.findIndex((item) => !progressById.get(item.id)?.completed));
@@ -27,9 +39,13 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
   });
   const [pending, setPending] = useState(false);
   const [restAfterSet, setRestAfterSet] = useState(null);
+  const [pendingRatingId, setPendingRatingId] = useState(null);
+  const [openReference, setOpenReference] = useState(false);
   const exercise = exercises[index];
   const targetSets = Math.max(1, Number(exercise?.sets) || 1);
   const currentSets = Math.min(completedSets[exercise?.id] ?? 0, targetSets);
+  const isTimedExercise = !Number.isFinite(exercise?.reps) && Number.isFinite(exercise?.durationSeconds);
+  const reference = exercise ? findExerciseReference(exercise.name) : null;
 
   useEffect(() => {
     if (!running) return undefined;
@@ -59,6 +75,10 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
     return () => window.removeEventListener('beforeunload', protectActiveSession);
   }, []);
 
+  useEffect(() => {
+    setOpenReference(false);
+  }, [index]);
+
   if (!exercise) return null;
 
   async function completeSet() {
@@ -73,8 +93,14 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
     try {
       await onCompleteExercise(exercise.id);
       setCompletedExerciseIds((value) => Array.from(new Set([...value, exercise.id])));
+      setPendingRatingId(exercise.id);
       if (index < exercises.length - 1) setRestAfterSet({ nextIndex: index + 1, nextLabel: exercises[index + 1].name });
     } finally { setPending(false); }
+  }
+
+  function rateDifficulty(difficulty) {
+    setPendingRatingId(null);
+    onRateDifficulty?.(exercise.id, difficulty);
   }
 
   function finish() {
@@ -113,13 +139,63 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
             <h2 className="mt-2 font-headline-lg text-2xl">{exercise.name}</h2>
             <p className="mt-2 text-on-surface-variant">{exercise.reps ? `${exercise.reps} repeticiones` : `${exercise.durationSeconds ?? 30} segundos`} por serie</p>
           </div>
+
+          <div className="flex flex-wrap justify-center gap-3">
+            {reference && (
+              <Button variant="secondary" className="px-4 text-sm" onClick={() => setOpenReference(true)}>Ver técnica</Button>
+            )}
+            <Button variant="secondary" className="px-4 text-sm" onClick={() => onSubstitute?.(exercise)}>Cambiar ejercicio</Button>
+          </div>
+
           <div className="rounded-2xl bg-surface-container-low p-4">
             <p className="text-sm text-on-surface-variant">Series completadas</p>
             <p className="mt-1 text-3xl font-bold">{currentSets} / {targetSets}</p>
           </div>
-          <Button className="w-full" disabled={pending} onClick={completeSet}>
-            {currentSets + 1 >= targetSets ? 'Completar ejercicio' : 'Completar serie'}
-          </Button>
+
+          {restAfterSet ? (
+            <RestTimer
+              mode="rest"
+              initialSeconds={exercise.restSeconds ?? 60}
+              exerciseName={exercise.name}
+              nextExerciseName={restAfterSet.nextLabel}
+              onComplete={() => { setIndex(restAfterSet.nextIndex); setRestAfterSet(null); }}
+              onSkip={() => { setIndex(restAfterSet.nextIndex); setRestAfterSet(null); }}
+            />
+          ) : completedExerciseIds.includes(exercise.id) ? (
+            <p className="text-sm font-bold text-primary-fixed-dim py-3">Ejercicio completado ✓</p>
+          ) : isTimedExercise ? (
+            <RestTimer
+              key={`${exercise.id}-${currentSets}`}
+              mode="work"
+              initialSeconds={exercise.durationSeconds}
+              exerciseName={exercise.name}
+              onComplete={completeSet}
+              onSkip={completeSet}
+            />
+          ) : (
+            <Button className="w-full" disabled={pending} onClick={completeSet}>
+              {currentSets + 1 >= targetSets ? 'Completar ejercicio' : 'Completar serie'}
+            </Button>
+          )}
+
+          {pendingRatingId === exercise.id && (
+            <div className="pt-2 border-t border-outline-variant/20">
+              <p className="text-xs text-on-surface-variant mb-2">¿Cómo se sintió?</p>
+              <EmojiProvider data={EMOJI_DATA}>
+                <div className="flex gap-2">
+                  {DIFFICULTY_OPTIONS.map((option) => (
+                    <EmojiBurstButton
+                      key={option.value}
+                      emoji={option.emoji}
+                      label={option.label}
+                      onClick={() => rateDifficulty(option.value)}
+                    />
+                  ))}
+                </div>
+              </EmojiProvider>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <Button variant="secondary" disabled={index === 0} onClick={() => setIndex((value) => value - 1)}>Anterior</Button>
             <Button variant="secondary" disabled={index === exercises.length - 1} onClick={() => setIndex((value) => value + 1)}>Siguiente</Button>
@@ -127,13 +203,9 @@ export default function GuidedWorkout({ sessionId, exercises, progressById, onCo
         </Card>
         <Button className="w-full" variant="secondary" disabled={completedExerciseIds.length === 0} onClick={finish}>Finalizar y registrar</Button>
       </div>
-      {restAfterSet && <RestTimer
-        initialSeconds={exercise.restSeconds ?? 60}
-        exerciseName={exercise.name}
-        nextExerciseName={restAfterSet.nextLabel}
-        onComplete={() => { setIndex(restAfterSet.nextIndex); setRestAfterSet(null); }}
-        onSkip={() => { setIndex(restAfterSet.nextIndex); setRestAfterSet(null); }}
-      />}
+      {reference && openReference && (
+        <FormReferenceModal isOpen exerciseName={exercise.name} reference={reference} onClose={() => setOpenReference(false)} />
+      )}
     </div>
   );
 }

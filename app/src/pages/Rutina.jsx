@@ -381,6 +381,8 @@ function Rutina() {
         onCompleteExercise={(exerciseId) => toggleExercise(exerciseId, true, false)}
         onFinish={(elapsedSeconds, completedExerciseIds) => registerCompleted(elapsedSeconds, completedExerciseIds)}
         onClose={() => setGuidedMode(false)}
+        onSubstitute={substituteExercise}
+        onRateDifficulty={rateDifficulty}
       />}
     </Layout>
   );
