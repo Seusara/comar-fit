@@ -421,6 +421,15 @@ function Perfil() {
           <span className="material-symbols-outlined" aria-hidden="true">logout</span>
           Cerrar sesión
         </Button>
+
+        <p className="text-center text-xs text-on-surface-variant">
+          Ilustraciones de técnica por{' '}
+          <a href="https://bryllim.com" target="_blank" rel="noreferrer" className="underline">Bryl Lim</a>
+          {' '}y{' '}
+          <a href="https://github.com/everkinetic/data" target="_blank" rel="noreferrer" className="underline">Everkinetic</a>
+          , bajo licencia{' '}
+          <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer" className="underline">CC BY-SA 4.0</a>.
+        </p>
       </div>
     </Layout>
   );

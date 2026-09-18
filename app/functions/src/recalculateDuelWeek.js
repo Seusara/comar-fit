@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { DateTime } from 'luxon';
 import { calculateStreak, calculateWeeklyScore, deriveWorkoutMetrics, getWeekWindow } from './scoring.js';
+import { notifyDuelPartner } from './notifyDuelPartner.js';
 
 const TIMEZONE = 'America/Mexico_City';
 const EDIT_WINDOW_MS = 10 * 60 * 1000;
@@ -85,6 +86,13 @@ export async function recalculateDuelWeek({ db, duelId, workoutId, before, after
       status: 'scored',
       scoredAt: FieldValue.serverTimestamp(),
     }, { merge: true });
+
+    if (!beforeData) {
+      // Best-effort: a partner notification failure should never break scoring.
+      try {
+        await notifyDuelPartner({ db, duel, actingUserId: afterData.userId });
+      } catch { /* ignore */ }
+    }
   }
 
   const performedAt = source.performedAt?.toDate?.() ?? new Date();

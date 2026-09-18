@@ -70,26 +70,32 @@ describe('Rutina semanal', () => {
     });
   });
 
-  it('muestra exactamente los ejercicios del plan y no crea progreso local', async () => {
+  it('muestra un resumen de la rutina sin checklist y sin crear progreso local', async () => {
     renderRoutine();
-    expect(await screen.findByRole('checkbox', { name: 'Sentadillas' })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Zancadas' })).toBeInTheDocument();
-    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
-    expect(screen.getByText('3 series × 10 reps')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Iniciar rutina' })).toBeEnabled();
+    expect(screen.getByText('0 de 2 ejercicios')).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expect(Object.keys(localStorage)).toHaveLength(0);
     expect(getOrCreateWorkoutProgress).toHaveBeenCalledWith('duel-1', 'aaron', '2026-W32', 1, workoutDay);
   });
 
-  it('escribe en workoutProgress y registra solo los ejercicios completados', async () => {
+  it('completa un ejercicio en el entrenamiento guiado y registra solo lo completado', async () => {
     const user = userEvent.setup();
     toggleExerciseCompletion.mockResolvedValue({
       ...pendingProgress, exercises: [{ ...pendingProgress.exercises[0], completed: true }, pendingProgress.exercises[1]],
       completedCount: 1, completionRate: 50, status: 'partial',
     });
     renderRoutine();
-    await user.click(await screen.findByRole('checkbox', { name: 'Sentadillas' }));
+    await user.click(await screen.findByRole('button', { name: 'Iniciar rutina' }));
+    expect(screen.getByRole('heading', { name: 'Sentadillas' })).toBeInTheDocument();
+
+    // Sentadillas tiene 3 series: no hay descanso entre series, solo la serie final completa el ejercicio.
+    await user.click(screen.getByRole('button', { name: 'Completar serie' }));
+    await user.click(screen.getByRole('button', { name: 'Completar serie' }));
+    await user.click(screen.getByRole('button', { name: 'Completar ejercicio' }));
     expect(toggleExerciseCompletion).toHaveBeenCalledWith('duel-1', 'aaron_2026-W32_d1', 'squat', true);
-    await user.click(screen.getByRole('button', { name: 'Registrar como entrenamiento' }));
+
+    await user.click(screen.getByRole('button', { name: 'Finalizar y registrar' }));
     const state = JSON.parse(screen.getByTestId('navigation-state').textContent);
     expect(state).toMatchObject({
       source: 'daily-routine',
@@ -102,9 +108,9 @@ describe('Rutina semanal', () => {
     let publish;
     subscribeToWorkoutProgress.mockImplementation((_duelId, _progressId, onData) => { publish = onData; return vi.fn(); });
     renderRoutine();
-    await screen.findByRole('checkbox', { name: 'Sentadillas' });
+    await screen.findByRole('button', { name: 'Iniciar rutina' });
     publish({ ...pendingProgress, exercises: [{ ...pendingProgress.exercises[0], completed: true }, pendingProgress.exercises[1]], completedCount: 1, completionRate: 50 });
-    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Sentadillas' })).toBeChecked());
+    await waitFor(() => expect(screen.getByText('1 de 2 ejercicios')).toBeInTheDocument());
   });
 
   it('muestra descanso sin ejercicios ni rutina opcional', async () => {

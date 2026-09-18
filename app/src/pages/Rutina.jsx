@@ -4,14 +4,11 @@ import Layout from '../components/Layout';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import ProgressRing from '../components/ProgressRing';
-import FormReferenceModal from '../components/FormReferenceModal';
-import RestTimer from '../components/RestTimer';
 import GuidedWorkout from '../components/GuidedWorkout';
 import PageSkeleton from '../components/PageSkeleton';
 import { adaptExerciseVolume, replaceExercise, substitutionOptions } from '../routines/sessionAdaptation';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveDuel } from '../hooks/useActiveDuel';
-import { findExerciseReference } from '../routines/catalog';
 import { getDuelWeekContext, DUEL_TIME_ZONE } from '../utils/dates';
 import { generatePlanIfMissing, getPlan } from '../firebase/plans';
 import {
@@ -31,13 +28,6 @@ const FOCUS_LABELS = {
   fullbody_core: 'Cuerpo completo + core',
   fullbody_shoulder_core: 'Cuerpo completo + hombros + core', upper_body: 'Tren superior',
 };
-
-function exerciseDetail(exercise) {
-  const sets = Number.isFinite(exercise.sets) ? exercise.sets : 1;
-  if (Number.isFinite(exercise.reps)) return `${sets} series × ${exercise.reps} reps`;
-  if (Number.isFinite(exercise.durationSeconds)) return `${sets} series × ${exercise.durationSeconds}s`;
-  return `${sets} series`;
-}
 
 function runTarget(target = {}) {
   const parts = [];
@@ -71,14 +61,11 @@ function Rutina() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [actionPending, setActionPending] = useState(false);
-  const [openReferenceExerciseId, setOpenReferenceExerciseId] = useState(null);
-  const [restingExerciseId, setRestingExerciseId] = useState(null);
   const [runDistanceKm, setRunDistanceKm] = useState('2');
   const [runDurationMinutes, setRunDurationMinutes] = useState('20');
   const [guidedMode, setGuidedMode] = useState(false);
   const [sessionMode, setSessionMode] = useState('normal');
   const [exerciseOverrides, setExerciseOverrides] = useState({});
-  const [pendingRatingId, setPendingRatingId] = useState(null); // exercise id awaiting difficulty rating
   const requestRef = useRef(0);
   const resumedSessionRef = useRef(null);
 
@@ -154,19 +141,13 @@ function Rutina() {
     } catch { /* ignore an invalid local session */ }
   }, [currentUser?.uid, dayPlan?.type, exercises.length, isoWeekday, weekId]);
 
-  async function toggleExercise(exerciseId, checked, showRest = true) {
+  async function toggleExercise(exerciseId, checked) {
     if (!duelId || actionPending) return;
     setActionPending(true);
     setError(null);
     try {
       const progressId = makeProgressId(currentUser.uid, weekId, isoWeekday);
       setProgress(await toggleExerciseCompletion(duelId, progressId, exerciseId, checked));
-      if (checked && showRest) {
-        const index = exercises.findIndex((exercise) => exercise.id === exerciseId);
-        if (index >= 0 && index < exercises.length - 1) setRestingExerciseId(exerciseId);
-        // Ask for difficulty rating after completing
-        setPendingRatingId(exerciseId);
-      }
     } catch {
       setError('No pudimos actualizar tu progreso.');
     } finally {
@@ -175,7 +156,6 @@ function Rutina() {
   }
 
   async function rateDifficulty(exerciseId, difficulty) {
-    setPendingRatingId(null);
     if (!duelId) return;
     try {
       const progressId = makeProgressId(currentUser.uid, weekId, isoWeekday);
@@ -314,73 +294,23 @@ function Rutina() {
                 </div>
               )}
             </Card>
-            <section aria-labelledby="exercises-heading">
-              <h2 id="exercises-heading" className="font-headline-lg text-lg mb-3">Ejercicios</h2>
-              <div className="space-y-3">
-                {exercises.map((exercise, index) => {
-                  const checked = !!progressById.get(exercise.id)?.completed;
-                  const reference = findExerciseReference(exercise.name);
-                  return (
-                    <Card key={exercise.id ?? index} className={checked ? 'border border-primary-fixed-dim/40' : ''}>
-                      <label className="flex items-center gap-4 cursor-pointer min-h-[44px]">
-                        <input type="checkbox" checked={checked} disabled={actionPending}
-                          onChange={(event) => toggleExercise(exercise.id, event.target.checked)}
-                          aria-label={exercise.name} className="h-6 w-6 rounded text-secondary-fixed-dim" />
-                        <span className="flex-1">
-                          <span className="block font-bold">{exercise.name}</span>
-                          <span className="block text-on-surface-variant text-sm mt-1">{exerciseDetail(exercise)}</span>
-                          <span className="mt-2 flex flex-wrap gap-4">
-                            {reference && <button type="button" onClick={(event) => { event.preventDefault(); setOpenReferenceExerciseId(exercise.id); }} className="text-primary-fixed-dim underline text-sm">Ver técnica</button>}
-                            <button type="button" onClick={(event) => { event.preventDefault(); substituteExercise(exercise); }} className="text-primary-fixed-dim underline text-sm">Cambiar ejercicio</button>
-                          </span>
-                        </span>
-                      </label>
-                      {/* Difficulty rating prompt — shown right after completing */}
-                      {checked && pendingRatingId === exercise.id && (
-                        <div className="mt-3 pt-3 border-t border-outline-variant/20">
-                          <p className="text-xs text-on-surface-variant mb-2">¿Cómo se sintió?</p>
-                          <div className="flex gap-2">
-                            {[['easy', '💪 Fácil'], ['moderate', '😐 Normal'], ['hard', '😰 Difícil']].map(([value, label]) => (
-                              <button
-                                key={value}
-                                type="button"
-                                onClick={() => rateDifficulty(exercise.id, value)}
-                                className="flex-1 rounded-xl border border-outline-variant/30 bg-surface-container-low py-2 text-xs font-bold text-on-surface tap-scale"
-                              >
-                                {label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {reference && openReferenceExerciseId === exercise.id && <FormReferenceModal isOpen exerciseName={exercise.name} reference={reference} onClose={() => setOpenReferenceExerciseId(null)} />}
-                    </Card>
-                  );
-                })}
-              </div>
-            </section>
             <div className="space-y-3">
-              <Button className="w-full" disabled={exercises.length === 0} onClick={() => setGuidedMode(true)}>Comenzar entrenamiento guiado</Button>
-              <Button className="w-full" disabled={completed.length === 0} onClick={() => registerCompleted()}>Registrar como entrenamiento</Button>
+              <Button className="w-full" disabled={exercises.length === 0} onClick={() => setGuidedMode(true)}>Iniciar rutina</Button>
               <Button variant="secondary" className="w-full" onClick={() => navigate('/subir-prueba')}>Registro manual</Button>
             </div>
           </>
         )}
       </div>
 
-      {restingExerciseId && (() => {
-        const index = exercises.findIndex((exercise) => exercise.id === restingExerciseId);
-        return <RestTimer key={restingExerciseId} initialSeconds={exercises[index]?.restSeconds ?? 60}
-          exerciseName={exercises[index]?.name} nextExerciseName={exercises[index + 1]?.name}
-          onComplete={() => setRestingExerciseId(null)} onSkip={() => setRestingExerciseId(null)} />;
-      })()}
       {guidedMode && <GuidedWorkout
         sessionId={`${currentUser.uid}:${weekId}:${isoWeekday}`}
         exercises={exercises}
         progressById={progressById}
-        onCompleteExercise={(exerciseId) => toggleExercise(exerciseId, true, false)}
+        onCompleteExercise={(exerciseId) => toggleExercise(exerciseId, true)}
         onFinish={(elapsedSeconds, completedExerciseIds) => registerCompleted(elapsedSeconds, completedExerciseIds)}
         onClose={() => setGuidedMode(false)}
+        onSubstitute={substituteExercise}
+        onRateDifficulty={rateDifficulty}
       />}
     </Layout>
   );
