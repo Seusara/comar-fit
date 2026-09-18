@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import symbol from '../assets/branding/comar-fit-symbol.png';
 import Dock from './Dock';
+import { useScrollDirection } from '../hooks/useScrollDirection';
 
 const NAV_ITEMS = [
   { key: 'inicio', label: 'Inicio', icon: 'home', to: '/dashboard' },
@@ -14,6 +15,7 @@ const SYMBOL_SIZE = 256;
 
 function Layout({ children, active = 'inicio' }) {
   const navigate = useNavigate();
+  const dockHidden = useScrollDirection();
 
   const dockItems = NAV_ITEMS.map((item) => ({
     label: item.label,
@@ -59,6 +61,7 @@ function Layout({ children, active = 'inicio' }) {
         baseItemSize={44}
         magnification={62}
         distance={140}
+        hidden={dockHidden}
       />
     </div>
   );

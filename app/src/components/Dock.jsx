@@ -87,6 +87,7 @@ export default function Dock({
   panelHeight = 64,
   dockHeight = 200,
   baseItemSize = 44,
+  hidden = false,
 }) {
   const mouseX = useMotionValue(Infinity);
   const isHovered = useMotionValue(0);
@@ -111,6 +112,9 @@ export default function Dock({
         }}
         className={`dock-panel ${className}`}
         style={{ height: panelHeight }}
+        animate={{ x: '-50%', y: hidden ? '150%' : '0%', opacity: hidden ? 0 : 1 }}
+        transition={{ duration: 0.25, ease: 'easeInOut' }}
+        inert={hidden ? '' : undefined}
         role="toolbar"
         aria-label="Navegación principal"
       >
