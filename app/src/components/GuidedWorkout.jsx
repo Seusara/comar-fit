@@ -119,7 +119,7 @@ export default function GuidedWorkout({
 
   const overall = Math.round(((index + currentSets / targetSets) / exercises.length) * 100);
   return (
-    <div className="fixed inset-0 z-40 overflow-y-auto bg-background p-4 sm:p-8" role="dialog" aria-modal="true" aria-label="Entrenamiento guiado">
+    <div className="fixed inset-0 z-[100] overflow-y-auto bg-background p-4 sm:p-8" role="dialog" aria-modal="true" aria-label="Entrenamiento guiado">
       <div className="mx-auto max-w-xl space-y-5">
         <header className="flex items-center justify-between gap-4">
           <Button variant="secondary" onClick={requestClose}>Guardar y salir</Button>
