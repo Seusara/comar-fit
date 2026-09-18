@@ -107,7 +107,10 @@ function FormReferenceModal({ isOpen, exerciseName, reference, onClose }) {
 
         {isSprite ? (
           <div className="mt-4">
-            <div className="relative mx-auto aspect-square w-48 overflow-hidden rounded-lg bg-surface-container-low">
+            {/* Fixed light background: the sprite art is a fixed slate-gray ink
+                color (not theme-aware), so it needs a light backdrop to stay
+                legible on dark themes like Oryzo. */}
+            <div className="relative mx-auto aspect-square w-48 overflow-hidden rounded-lg bg-neutral-100">
               <img
                 src={getAssetUrl(reference.spriteSlug, frameIndex + 1)}
                 alt={`${exerciseName} — postura ${frameIndex + 1} de ${SPRITE_FRAME_COUNT}`}
